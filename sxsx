@@ -1,1 +1,110 @@
+$folder = "$env:USERPROFILE\Desktop\ChessAutoPilot"
+New-Item -ItemType Directory -Force -Path $folder | Out-Null
 
+$manifest = @'
+{
+  "manifest_version": 3,
+  "name": "Chess AutoPilot",
+  "version": "2.0",
+  "description": "Advanced Chess Assistant",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://www.chess.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.chess.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["stockfish.js"],
+      "matches": ["https://www.chess.com/*"]
+    }
+  ]
+}
+'@
+Set-Content -Path "$folder\manifest.json" -Value $manifest -Encoding UTF8
+
+$css = @'
+#chess-helper-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 220px;
+    background: rgba(20, 20, 25, 0.95);
+    color: #00ffcc;
+    font-family: 'Courier New', monospace;
+    padding: 15px;
+    border: 1px solid #00ffcc;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+    z-index: 99999;
+    font-size: 12px;
+}
+#chess-helper-panel h3 { margin: 0 0 10px 0; text-align: center; text-transform: uppercase; }
+#chess-helper-panel button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    background: #00ffcc;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+}
+#chess-helper-panel button:hover { background: #00ccaa; }
+.helper-active { background: #ff4444 !important; color: white !important; }
+'@
+Set-Content -Path "$folder\styles.css" -Value $css -Encoding UTF8
+
+$js = @'
+console.log("Chess AutoPilot: Запуск модуля...");
+
+let isAutoPlay = false;
+let isTraining = false;
+
+// Создаем интерфейс (Панель управления)
+function createUI() {
+    if (document.getElementById('chess-helper-panel')) return;
+    
+    const panel = document.createElement('div');
+    panel.id = 'chess-helper-panel';
+    panel.innerHTML = `
+        <h3>CyberStalker Chess</h3>
+        <div>Режим: <span id="ch-mode">Ожидание</span></div>
+        <button id="ch-autoplay">Вкл Автопилот</button>
+        <button id="ch-training">Вкл Обучение</button>
+        <button id="ch-smart">Умная подсветка</button>
+        <hr style="border-color:#333;">
+        <div>Stockfish: <span id="ch-engine">Загрузка...</span></div>
+    `;
+    document.body.appendChild(panel);
+
+    // Логика кнопок
+    document.getElementById('ch-autoplay').onclick = function() {
+        isAutoPlay = !isAutoPlay;
+        this.innerText = isAutoPlay ? "Выкл Автопилот" : "Вкл Автопилот";
+        this.classList.toggle('helper-active', isAutoPlay);
+        document.getElementById('ch-mode').innerText = isAutoPlay ? "АВТОПИЛОТ" : "Ожидание";
+        console.log("Автопилот: " + isAutoPlay);
+    };
+
+    document.getElementById('ch-training').onclick = function() {
+        isTraining = !isTraining;
+        this.innerText = isTraining ? "Выкл Обучение" : "Вкл Обучение";
+        this.classList.toggle('helper-active', isTraining);
+        console.log("Обучение: " + isTraining);
+    };
+}
+
+// Запускаем интерфейс при загрузке страницы
+window.addEventListener('load', createUI);
+// На случай если страница долго грузится (SPA)
+setTimeout(createUI, 2000);
+'@
+Set-Content -Path "$folder\content.js" -Value $js -Encoding UTF8
+
+Write-Host "Папка ChessAutoPilot и все файлы созданы!" -ForegroundColor Green
