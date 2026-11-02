@@ -2,274 +2,425 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Space Launcher</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebula Launcher</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* =========================================
+           ПЕРЕМЕННЫЕ (ЦВЕТА МЕНЯЮТСЯ ЧЕРЕЗ JS)
+           ========================================= */
         :root {
             --accent: #5e9eff;
-            --accent-glow: rgba(94, 158, 255, 0.5);
-            --bg: #020308;
-            --glass: rgba(15, 22, 40, 0.35);
-            --glass-hover: rgba(30, 45, 80, 0.5);
-            --border: rgba(255, 255, 255, 0.1);
-            --border-hover: rgba(94, 158, 255, 0.8);
-            --text: #e2e8f0;
-            --text-dim: #8892b0;
-            --smooth: cubic-bezier(0.16, 1, 0.3, 1);
+            --accent-glow: rgba(94, 158, 255, 0.3);
+            --bg: #030407;
+            --panel: rgba(12, 17, 28, 0.6);
+            --panel-hover: rgba(22, 30, 48, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.2);
+            --text: #f1f5f9;
+            --text-dim: #64748b;
+            
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --blur: blur(24px);
         }
 
         * {
             margin: 0; padding: 0; box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Manrope', sans-serif;
             user-select: none;
-            cursor: none; /* СКРЫВАЕМ ОБЫЧНЫЙ КУРСОР */
+            cursor: none;
         }
 
         body {
             height: 100vh;
-            background: var(--bg);
-            overflow: hidden; color: var(--text);
-            display: flex; justify-content: center; align-items: center;
-            position: relative;
+            background-color: var(--bg);
+            overflow: hidden;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
         }
 
-        /* КАСТОМНЫЙ КУРСОР-ПРИЦЕЛ */
+        /* =========================================
+           КАСТОМНЫЙ КУРСОР
+           ========================================= */
         .cursor {
-            position: fixed;
+            position: fixed; top: 0; left: 0;
             width: 8px; height: 8px;
             background: var(--accent);
             border-radius: 50%;
             pointer-events: none;
             z-index: 9999;
-            box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
             transform: translate(-50%, -50%);
-            transition: width 0.2s, height 0.2s, background 0.2s;
+            box-shadow: 0 0 15px var(--accent-glow);
+            transition: width 0.3s var(--ease-out), height 0.3s var(--ease-out), background 0.3s, border 0.3s;
+        }
+        .cursor.hovering {
+            width: 32px; height: 32px;
+            background: transparent;
+            border: 1.5px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
         }
 
-        /* ЖИВОЙ КОСМОС */
-        .nebula {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(100px);
+        /* =========================================
+           ФОН
+           ========================================= */
+        .bg-glow {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw; height: 80vh;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+            opacity: 0.15;
+            filter: blur(80px);
+            pointer-events: none;
             z-index: 0;
-            opacity: 0.6;
-            animation: drift 25s infinite alternate ease-in-out;
+            transition: background 0.8s ease;
         }
 
-        .nebula-1 { width: 70vw; height: 70vh; background: radial-gradient(circle, rgba(94, 158, 255, 0.15) 0%, transparent 70%); top: -20%; left: -20%; }
-        .nebula-2 { width: 60vw; height: 60vh; background: radial-gradient(circle, rgba(138, 43, 226, 0.12) 0%, transparent 70%); bottom: -20%; right: -20%; animation-delay: -12s; animation-duration: 30s; }
-
-        @keyframes drift {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(150px, 100px) scale(1.2); }
-        }
-
-        .stars {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        .bg-grid {
+            position: absolute; inset: 0;
             background-image: 
-                radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,255,255,0.8), transparent),
-                radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,0.6), transparent),
-                radial-gradient(2px 2px at 40% 80%, rgba(255,255,255,0.4), transparent),
-                radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.7), transparent);
-            background-size: 300px 300px;
-            z-index: 1;
-            animation: twinkle 5s infinite alternate;
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        @keyframes twinkle { 0% { opacity: 0.4; } 100% { opacity: 0.9; } }
-
-        /* ПАДАЮЩИЕ КОМЕТЫ */
-        .shooting-star {
-            position: absolute;
-            width: 100px; height: 2px;
-            background: linear-gradient(90deg, rgba(255,255,255,0), #fff);
-            opacity: 0;
-            z-index: 2;
-            animation: shoot 8s infinite;
-        }
-        .shooting-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 2s; }
-        .shooting-star:nth-child(2) { top: 40%; left: 60%; animation-delay: 6s; }
-
-        @keyframes shoot {
-            0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; }
-            10% { transform: translateX(-200px) translateY(200px) rotate(-45deg); opacity: 0; }
-            100% { opacity: 0; }
+        /* =========================================
+           ВЕРХНЯЯ ПАНЕЛЬ
+           ========================================= */
+        .top-bar {
+            height: 70px;
+            padding: 0 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 10;
         }
 
-        /* СТЕКЛО */
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+        .logo {
+            font-size: 20px; font-weight: 800; letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+        .logo span { color: var(--accent); transition: color 0.3s; }
+
+        .nav-icons { display: flex; gap: 12px; }
+        .nav-btn {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            background: var(--panel); backdrop-filter: var(--blur);
             border: 1px solid var(--border);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-            transition: all 0.7s var(--smooth);
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.4s var(--ease-out);
+        }
+        .nav-btn:hover { border-color: var(--accent); background: var(--panel-hover); }
+        .nav-btn svg { width: 18px; height: 18px; fill: var(--text-dim); transition: fill 0.3s; }
+        .nav-btn:hover svg { fill: var(--accent); }
+
+        /* =========================================
+           ОСНОВНОЙ КОНТЕНТ
+           ========================================= */
+        .main-content {
+            flex: 1;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; z-index: 10;
         }
 
-        .glass-panel:hover {
-            background: var(--glass-hover);
-            border-color: var(--border-hover);
-            box-shadow: 0 15px 40px 0 rgba(0, 0, 0, 0.6), 0 0 30px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.3);
-            transform: translateY(-4px) scale(1.02);
+        /* Центральный блок */
+        .center-card {
+            display: flex; flex-direction: column; align-items: center; gap: 24px;
+            background: var(--panel); backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: 24px;
+            padding: 50px 80px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: border-color 0.4s;
         }
+        .center-card:hover { border-color: var(--border-hover); }
 
-        /* ПРОФИЛЬ */
-        .profile { position: absolute; top: 32px; left: 32px; display: flex; align-items: center; gap: 12px; padding: 8px 20px 8px 8px; border-radius: 40px; z-index: 10; }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; background: #1e2433; border: 1px solid rgba(255,255,255,0.2); }
-        .nickname { font-size: 14px; font-weight: 600; color: var(--text); }
-
-        /* НАСТРОЙКИ */
-        .top-actions { position: absolute; top: 32px; right: 32px; display: flex; gap: 12px; z-index: 10; }
-        .action-btn { width: 44px; height: 44px; border-radius: 14px; display: flex; justify-content: center; align-items: center; }
-        .action-btn svg { width: 20px; height: 20px; fill: var(--text-dim); transition: fill 0.4s ease; }
-        .action-btn:hover svg { fill: var(--accent); }
-
-        /* СОЦСЕТИ */
-        .socials { position: absolute; bottom: 32px; left: 32px; display: flex; flex-direction: column; gap: 12px; z-index: 10; }
-        .social-btn { width: 44px; height: 44px; border-radius: 14px; display: flex; justify-content: center; align-items: center; }
-        .social-btn svg { width: 22px; height: 22px; fill: var(--text-dim); transition: all 0.4s ease; }
-        .social-btn:hover svg { fill: #fff; transform: scale(1.1); }
-
-        /* ЦЕНТР */
-        .center { z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 24px; }
-
-        /* КНОПКА ИГРАТЬ С ПУЛЬСАЦИЕЙ */
+        /* Главная кнопка */
         .play-btn {
-            display: flex; align-items: center; justify-content: center; gap: 14px;
-            background: linear-gradient(180deg, rgba(94, 158, 255, 0.35) 0%, rgba(94, 158, 255, 0.1) 100%);
-            border: 1px solid rgba(94, 158, 255, 0.6);
-            color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 4px;
-            padding: 22px 85px; border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid var(--accent);
+            color: #fff; font-size: 22px; font-weight: 800; letter-spacing: 4px;
+            padding: 20px 80px; border-radius: 16px;
             position: relative; overflow: hidden;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 40px rgba(94, 158, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
-            transition: all 0.7s var(--smooth);
-            animation: pulseBtn 3s infinite alternate;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 30px var(--accent-glow);
+            transition: all 0.5s var(--ease-out);
+            text-transform: uppercase;
         }
-
-        @keyframes pulseBtn {
-            0% { box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 30px rgba(94, 158, 255, 0.2), inset 0 1px 0 rgba(255,255,255,0.4); }
-            100% { box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 60px rgba(94, 158, 255, 0.5), inset 0 1px 0 rgba(255,255,255,0.6); }
-        }
-
-        .play-btn svg { width: 24px; height: 24px; fill: #fff; transition: transform 0.7s var(--smooth); }
 
         .play-btn::before {
             content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transform: skewX(-20deg); transition: left 0.8s var(--smooth);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: skewX(-20deg); transition: left 0.6s var(--ease-out);
         }
 
         .play-btn:hover {
-            background: linear-gradient(180deg, rgba(94, 158, 255, 0.6) 0%, rgba(94, 158, 255, 0.2) 100%);
-            border-color: #fff; transform: translateY(-5px) scale(1.05);
-            animation: none; /* Отключаем пульсацию при наведении, чтобы не мешала */
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 80px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.8);
-            text-shadow: 0 0 15px rgba(255,255,255,0.8);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 50px var(--accent-glow);
+            transform: translateY(-2px) scale(1.02);
+            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+        }
+        .play-btn:hover::before { left: 150%; }
+
+        .version-btn {
+            font-size: 14px; font-weight: 600; color: var(--text-dim);
+            background: transparent; border: none;
+            transition: color 0.3s;
+        }
+        .version-btn:hover { color: var(--accent); }
+
+        /* =========================================
+           НИЖНЯЯ ПАНЕЛЬ (ПОЛЗУНОК ОПТИМИЗАЦИИ)
+           ========================================= */
+        .bottom-bar {
+            height: 100px;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; z-index: 10;
         }
 
-        .play-btn:hover::before { left: 150%; }
-        .play-btn:hover svg { transform: scale(1.2); }
+        .slider-container {
+            display: flex; align-items: center; gap: 20px;
+            background: var(--panel); backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: 40px;
+            padding: 12px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: border-color 0.3s;
+        }
+        .slider-container:hover { border-color: var(--border-hover); }
 
-        .version { display: flex; align-items: center; gap: 8px; padding: 14px 32px; border-radius: 16px; font-size: 14px; font-weight: 500; color: var(--text-dim); }
-        .version:hover { color: #fff; }
+        .slider-label { font-size: 13px; font-weight: 700; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
 
-        /* СТАТУС */
-        .status-panel { position: absolute; right: 32px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; padding: 24px; border-radius: 20px; z-index: 10; }
-        .status-item { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-dim); font-weight: 500; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 12px #10b981; }
-        .status-dot.blue { background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+        /* Ползунок */
+        .custom-slider {
+            position: relative; width: 300px; height: 8px;
+            background: rgba(255,255,255,0.1); border-radius: 4px;
+        }
 
-        /* ПАЛИТРА */
-        .palette-btn { position: absolute; bottom: 32px; right: 32px; width: 54px; height: 54px; border-radius: 16px; display: flex; justify-content: center; align-items: center; z-index: 10; }
-        .palette-btn svg { width: 26px; height: 26px; fill: var(--text-dim); transition: all 0.6s var(--smooth); }
-        .palette-btn:hover { transform: translateY(-5px) rotate(15deg); }
+        .slider-thumb {
+            position: absolute; top: 50%; left: 0; /* Позиция будет меняться в JS */
+            transform: translate(-50%, -50%);
+            width: 24px; height: 24px;
+            background: var(--accent); border-radius: 50%;
+            box-shadow: 0 0 15px var(--accent-glow);
+            transition: left 0.4s var(--ease-out), transform 0.2s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        .slider-thumb:hover { transform: translate(-50%, -50%) scale(1.2); }
+
+        .slider-fill {
+            position: absolute; top: 0; left: 0; height: 100%;
+            background: var(--accent); border-radius: 4px;
+            width: 50%; /* Меняется в JS */
+            transition: width 0.4s var(--ease-out);
+        }
+
+        .slider-marks { display: flex; gap: 15px; }
+        .slider-mark { font-size: 12px; font-weight: 600; color: var(--text-dim); transition: color 0.3s; }
+        .slider-mark.active { color: var(--accent); font-weight: 800; }
+
+        /* =========================================
+           ПАЛИТРА (Кнопка и Окно)
+           ========================================= */
+        .palette-btn {
+            position: absolute; bottom: 30px; right: 40px;
+            width: 50px; height: 50px; border-radius: 16px;
+            background: var(--panel); backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 20; transition: all 0.4s var(--ease-out);
+        }
+        .palette-btn:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+        .palette-btn svg { width: 22px; height: 22px; fill: var(--text-dim); transition: fill 0.3s; }
         .palette-btn:hover svg { fill: var(--accent); }
 
-        /* ЦИТАТЫ */
-        .quotes { position: absolute; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-        .quote { position: absolute; font-size: 14px; font-weight: 500; letter-spacing: 1px; color: rgba(255,255,255,0.25); text-shadow: 0 2px 10px rgba(0,0,0,0.8); animation: floatQuote 16s infinite linear; opacity: 0; }
-        .q1 { top: 25%; left: 15%; animation-delay: 0s; }
-        .q2 { top: 75%; left: 25%; animation-delay: 5.3s; }
-        .q3 { top: 35%; right: 15%; animation-delay: 10.6s; }
-        @keyframes floatQuote { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(60px); opacity: 0; } }
+        /* Окно палитры */
+        .palette-menu {
+            position: absolute; bottom: 90px; right: 40px;
+            width: 240px; padding: 20px;
+            background: var(--panel); backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            z-index: 20;
+            opacity: 0; pointer-events: none; transform: translateY(10px);
+            transition: all 0.4s var(--ease-out);
+        }
+        .palette-menu.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+        .palette-title { font-size: 14px; font-weight: 700; margin-bottom: 15px; color: #fff; text-align: center; }
+        
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        .color-swatch {
+            width: 100%; aspect-ratio: 1; border-radius: 50%;
+            cursor: pointer; border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+        .color-swatch:hover { transform: scale(1.15); }
+
+        .custom-color {
+            width: 100%; height: 35px; border-radius: 8px; border: none;
+            background: rgba(255,255,255,0.05); cursor: pointer;
+            outline: none;
+        }
+
     </style>
 </head>
 <body>
-    <!-- Курсор -->
     <div class="cursor" id="cursor"></div>
+    <div class="bg-glow" id="bgGlow"></div>
+    <div class="bg-grid"></div>
 
-    <!-- Фон -->
-    <div class="nebula nebula-1"></div>
-    <div class="nebula nebula-2"></div>
-    <div class="stars"></div>
-    
-    <!-- Кометы -->
-    <div class="shooting-star"></div>
-    <div class="shooting-star"></div>
+    <!-- Верхняя панель -->
+    <header class="top-bar">
+        <div class="logo">NEBULA<span>.</span></div>
+        <div class="nav-icons">
+            <div class="nav-btn interactive"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+            <div class="nav-btn interactive"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+        </div>
+    </header>
 
-    <div class="quotes">
-        <div class="quote q1">«Дорогу осилит идущий»</div>
-        <div class="quote q2">«Не бойся ошибок, бойся бездействия»</div>
-        <div class="quote q3">«Лучшее время начать — сегодня»</div>
-    </div>
+    <!-- Центральный блок -->
+    <main class="main-content">
+        <div class="center-card">
+            <button class="play-btn interactive">Играть</button>
+            <button class="version-btn interactive">Выбрать версию</button>
+        </div>
+    </main>
 
-    <div class="profile glass-panel">
-        <div class="avatar"></div>
-        <div class="nickname">Мик версия</div>
-    </div>
+    <!-- Нижняя панель с ползунком -->
+    <footer class="bottom-bar">
+        <div class="slider-container">
+            <span class="slider-label">Графика</span>
+            <div class="custom-slider interactive" id="sliderTrack">
+                <div class="slider-fill" id="sliderFill"></div>
+                <div class="slider-thumb" id="sliderThumb"></div>
+            </div>
+            <div class="slider-marks">
+                <span class="slider-mark" id="mark0">Слабо</span>
+                <span class="slider-mark active" id="mark1">Средне</span>
+                <span class="slider-mark" id="mark2">Мощно</span>
+            </div>
+        </div>
+    </footer>
 
-    <div class="top-actions">
-        <div class="action-btn glass-panel"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
-        <div class="action-btn glass-panel"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></div>
-        <div class="action-btn glass-panel"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
-    </div>
-
-    <div class="center">
-        <button class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            Играть
-        </button>
-        <div class="version glass-panel">Выбрать версию</div>
-    </div>
-
-    <div class="socials">
-        <div class="social-btn glass-panel"><svg viewBox="0 0 24 24"><path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z"/></svg></div>
-        <div class="social-btn glass-panel"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.84 1.17-5.19 3.44-.49.34-.94.5-1.34.49-.44-.01-1.29-.25-1.92-.46-.78-.26-1.4-.4-1.35-.85.02-.23.35-.47.98-.72 3.85-1.68 6.42-2.78 7.71-3.32 3.66-1.52 4.42-1.79 4.91-1.8.11 0 .35.03.5.13.13.09.17.21.18.3.01.09.02.27.01.36z"/></svg></div>
-    </div>
-
-    <div class="status-panel glass-panel">
-        <div class="status-item"><div class="status-dot"></div> Сервера онлайн</div>
-        <div class="status-item"><div class="status-dot blue"></div> Игроков: 1248</div>
-    </div>
-
-    <div class="palette-btn glass-panel">
+    <!-- Палитра -->
+    <div class="palette-btn interactive" id="paletteBtn">
         <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
     </div>
 
+    <!-- Меню палитры -->
+    <div class="palette-menu" id="paletteMenu">
+        <div class="palette-title">Цвет интерфейса</div>
+        <div class="color-grid">
+            <div class="color-swatch" style="background: #5e9eff;" data-color="#5e9eff"></div>
+            <div class="color-swatch" style="background: #00e5ff;" data-color="#00e5ff"></div>
+            <div class="color-swatch" style="background: #10b981;" data-color="#10b981"></div>
+            <div class="color-swatch" style="background: #ef4444;" data-color="#ef4444"></div>
+            <div class="color-swatch" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+            <div class="color-swatch" style="background: #f59e0b;" data-color="#f59e0b"></div>
+            <div class="color-swatch" style="background: #ec4899;" data-color="#ec4899"></div>
+            <div class="color-swatch" style="background: #ffffff;" data-color="#ffffff"></div>
+        </div>
+        <input type="color" class="custom-color interactive" id="customColorPicker" value="#5e9eff">
+    </div>
+
     <script>
-        // Скрипт для кастомного курсора
+        // 1. Курсор
         const cursor = document.getElementById('cursor');
+        const interactables = document.querySelectorAll('.interactive');
         document.addEventListener('mousemove', (e) => {
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
         });
-        // Увеличение курсора при наведении на кнопки
-        const clickables = document.querySelectorAll('.glass-panel, .play-btn, a');
-        clickables.forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                cursor.style.width = '20px';
-                cursor.style.height = '20px';
-                cursor.style.background = 'transparent';
-                cursor.style.border = '2px solid var(--accent)';
-            });
-            el.addEventListener('mouseleave', () => {
-                cursor.style.width = '8px';
-                cursor.style.height = '8px';
-                cursor.style.background = 'var(--accent)';
-                cursor.style.border = 'none';
+        interactables.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+        });
+
+        // 2. Логика палитры
+        const paletteBtn = document.getElementById('paletteBtn');
+        const paletteMenu = document.getElementById('paletteMenu');
+        const swatches = document.querySelectorAll('.color-swatch');
+        const colorPicker = document.getElementById('customColorPicker');
+        const bgGlow = document.getElementById('bgGlow');
+
+        paletteBtn.addEventListener('click', () => {
+            paletteMenu.classList.toggle('open');
+        });
+
+        function setThemeColor(hex) {
+            // Меняем CSS переменную
+            document.documentElement.style.setProperty('--accent', hex);
+            // Делаем цвет полупрозрачным для свечения (упрощенно)
+            document.documentElement.style.setProperty('--accent-glow', hex + '4D'); 
+            // Обновляем цвет в пикере
+            colorPicker.value = hex;
+        }
+
+        swatches.forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                setThemeColor(swatch.getAttribute('data-color'));
             });
         });
+
+        colorPicker.addEventListener('input', (e) => {
+            setThemeColor(e.target.value);
+        });
+
+        // 3. Логика ползунка графики
+        const track = document.getElementById('sliderTrack');
+        const fill = document.getElementById('sliderFill');
+        const thumb = document.getElementById('sliderThumb');
+        const marks = [document.getElementById('mark0'), document.getElementById('mark1'), document.getElementById('mark2')];
+        
+        let currentPos = 1; // 0 = Слабо, 1 = Средне, 2 = Мощно
+        let isDragging = false;
+
+        function updateSliderUI(pos) {
+            // pos от 0 до 100%
+            fill.style.width = pos + '%';
+            thumb.style.left = pos + '%';
+            
+            // Определяем активный маркер
+            let activeIndex = 1;
+            if (pos < 25) activeIndex = 0;
+            else if (pos > 75) activeIndex = 2;
+
+            marks.forEach((m, i) => {
+                if (i === activeIndex) m.classList.add('active');
+                else m.classList.remove('active');
+            });
+        }
+
+        // Начальная позиция (Средне - 50%)
+        updateSliderUI(50);
+
+        track.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            moveThumb(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) moveThumb(e);
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                // Магнитим к ближайшему значению
+                let rect = track.getBoundingClientRect();
+                let x = Math.max(0, Math.min(100, ((thumb.getBoundingClientRect().left + 12 - rect.left) / rect.width) * 100));
+                
+                if (x < 25) { currentPos = 0; updateSliderUI(0); }
+                else if (x > 75) { currentPos = 2; updateSliderUI(100); }
+                else { currentPos = 1; updateSliderUI(50); }
+            }
+        });
+
+        function moveThumb(e) {
+            if (!isDragging) return;
+            let rect = track.getBoundingClientRect();
+            let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            updateSliderUI(x);
+        }
     </script>
 </body>
 </html>
