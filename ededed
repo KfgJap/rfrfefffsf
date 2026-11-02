@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>Nebula Launcher</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
             --primary-glow: rgba(99, 102, 241, 0.5);
             --bg: #030407;
-            --glass: rgba(20, 25, 40, 0.4);
-            --border: rgba(255, 255, 255, 0.1);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-hover: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.15);
             --text: #ffffff;
             --text-muted: #8892b0;
-            --smooth: cubic-bezier(0.16, 1, 0.3, 1);
             --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --smooth: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         * {
@@ -41,7 +42,7 @@
             transition: width 0.3s var(--spring), height 0.3s var(--spring), background 0.3s, border 0.3s;
         }
         .cursor.hovering {
-            width: 32px; height: 32px; background: transparent;
+            width: 30px; height: 30px; background: transparent;
             border: 2px solid var(--primary);
         }
 
@@ -61,24 +62,24 @@
         .nebula-1 { width: 60vw; height: 60vh; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); top: -20%; left: -20%; }
         .nebula-2 { width: 50vw; height: 50vh; background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%); bottom: -20%; right: 20%; }
 
-        /* --- ГАЛАКТИКА --- */
         .galaxy-canvas {
             position: absolute; right: 5%; top: 50%; transform: translateY(-50%);
             width: 600px; height: 600px; z-index: 1; pointer-events: none; opacity: 0.9;
         }
 
-        /* --- СТЕКЛО --- */
+        /* --- СТЕКЛО (ВСЕ КНОПКИ) --- */
         .glass {
             background: var(--glass);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
             transition: all 0.4s var(--spring);
         }
         .glass:hover {
-            background: rgba(40, 50, 80, 0.6);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+            background: var(--glass-hover);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255,255,255,0.2);
         }
 
         /* --- ИНТЕРФЕЙС --- */
@@ -88,28 +89,43 @@
             padding: 40px;
         }
 
-        /* Верхняя панель */
         .top-bar {
             display: flex; justify-content: space-between; align-items: flex-start;
         }
 
-        /* Профиль и версия */
-        .profile-section {
+        /* --- ПРОФИЛЬ С ВЫПАДАЮЩИМ МЕНЮ --- */
+        .profile-wrapper { position: relative; }
+        
+        .profile-trigger {
             display: flex; align-items: center; gap: 15px;
-        }
-        .user-profile {
-            display: flex; align-items: center; gap: 12px;
             padding: 8px 20px 8px 8px; border-radius: 50px; cursor: pointer;
         }
+        
         .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #a855f7); }
+        .user-info { display: flex; flex-direction: column; }
         .username { font-size: 15px; font-weight: 700; }
-        .version-tag {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 8px;
-            border: 1px solid var(--border); color: var(--primary);
-        }
+        .version { font-size: 11px; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; }
 
-        /* Соцсети и настройки */
+        /* Выпадающее меню */
+        .dropdown {
+            position: absolute; top: 110%; left: 0;
+            width: 100%; padding: 10px;
+            border-radius: 20px; display: flex; flex-direction: column; gap: 8px;
+            opacity: 0; pointer-events: none;
+            transform: translateY(-10px); transition: all 0.4s var(--spring);
+            z-index: 20;
+        }
+        .dropdown.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+        
+        .dropdown button {
+            background: transparent; border: none; color: white;
+            padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 600;
+            text-align: left; transition: all 0.3s;
+        }
+        .dropdown button:hover { background: rgba(255,255,255,0.1); padding-left: 18px; }
+        .dropdown button.primary { color: var(--primary); font-weight: 800; }
+
+        /* Настройки и соцсети */
         .nav-actions { display: flex; gap: 12px; }
         .icon-btn {
             width: 44px; height: 44px; border-radius: 12px;
@@ -118,31 +134,32 @@
         .icon-btn svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.3s; }
         .icon-btn:hover svg { fill: var(--text); }
 
-        /* Центр (Play) */
+        /* --- КНОПКА PLAY --- */
         .center-play {
             position: absolute; left: 25%; top: 50%; transform: translate(-50%, -50%);
         }
         .btn-play {
-            background: linear-gradient(180deg, #818cf8 0%, var(--primary) 100%);
+            background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border);
             color: white; font-size: 24px; font-weight: 900; letter-spacing: 4px;
-            padding: 22px 100px; border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4), inset 0 2px 0 rgba(255,255,255,0.3);
+            padding: 22px 100px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
             transition: all 0.4s var(--spring);
-            position: relative; overflow: hidden; border: none;
-            text-transform: uppercase;
+            position: relative; overflow: hidden; text-transform: uppercase;
         }
         .btn-play::before {
             content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
             transform: skewX(-20deg); transition: left 0.6s var(--smooth);
         }
         .btn-play:hover {
             transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.6), inset 0 2px 0 rgba(255,255,255,0.5);
+            background: var(--glass-hover); border-color: var(--primary);
+            box-shadow: 0 20px 50px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+            color: var(--primary);
         }
         .btn-play:hover::before { left: 150%; }
 
-        /* Нижняя панель (Графика) */
+        /* --- ПОЛЗУНОК --- */
         .bottom-bar {
             display: flex; justify-content: center; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
         }
@@ -150,24 +167,26 @@
             display: flex; flex-direction: column; align-items: center; gap: 15px;
         }
         .slider-label { font-size: 12px; font-weight: 800; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
+        
         .slider-track {
-            width: 280px; height: 4px; background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px; position: relative; cursor: pointer;
+            width: 280px; height: 6px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px; position: relative; cursor: pointer;
         }
         .slider-fill {
             position: absolute; left: 0; top: 0; height: 100%; width: 50%;
-            background: #fff; border-radius: 2px;
+            background: #fff; border-radius: 3px; pointer-events: none;
         }
         .slider-thumb {
             position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-            width: 16px; height: 16px; background: #fff; border-radius: 50%;
+            width: 18px; height: 18px; background: #fff; border-radius: 50%;
             box-shadow: 0 0 15px rgba(255,255,255,0.5); transition: transform 0.2s var(--spring);
+            pointer-events: none;
         }
         .slider-track:hover .slider-thumb { transform: translate(-50%, -50%) scale(1.3); }
         .slider-text {
             position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
             font-size: 13px; font-weight: 800; color: #fff;
-            opacity: 0; transition: 0.3s; letter-spacing: 1px;
+            opacity: 0; transition: 0.3s; letter-spacing: 1px; pointer-events: none;
         }
         .slider-track:hover .slider-text, .slider-track.active .slider-text { opacity: 1; }
 
@@ -182,24 +201,31 @@
 
     <div class="ui-layer">
         <div class="top-bar">
-            <div class="profile-section">
-                <div class="user-profile glass interactive">
+            
+            <!-- ПРОФИЛЬ И ВЫПАДАЮЩЕЕ МЕНЮ -->
+            <div class="profile-wrapper">
+                <div class="profile-trigger glass interactive" id="profileTrigger">
                     <div class="avatar"></div>
-                    <div class="username">Миша</div>
+                    <div class="user-info">
+                        <div class="username">Миша</div>
+                        <div class="version">1.20.4</div>
+                    </div>
                 </div>
-                <div class="version-tag interactive">1.20.4</div>
+                
+                <div class="dropdown glass" id="dropdownMenu">
+                    <button class="interactive">Войти</button>
+                    <button class="interactive primary">Зарегистрироваться</button>
+                </div>
             </div>
             
+            <!-- НАСТРОЙКИ И СОЦСЕТИ -->
             <div class="nav-actions">
-                <!-- TikTok -->
                 <div class="icon-btn glass interactive">
                     <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
                 </div>
-                <!-- Telegram -->
                 <div class="icon-btn glass interactive">
                     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.84 1.17-5.19 3.44-.49.34-.94.5-1.34.49-.44-.01-1.29-.25-1.92-.46-.78-.26-1.4-.4-1.35-.85.02-.23.35-.47.98-.72 3.85-1.68 6.42-2.78 7.71-3.32 3.66-1.52 4.42-1.79 4.91-1.8.11 0 .35.03.5.13.13.09.17.21.18.3.01.09.02.27.01.36z"/></svg>
                 </div>
-                <!-- Настройки -->
                 <div class="icon-btn glass interactive">
                     <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
                 </div>
@@ -223,7 +249,7 @@
     </div>
 
     <script>
-        // КУРСОР
+        // 1. КУРСОР
         const cursor = document.getElementById('cursor');
         const interactables = document.querySelectorAll('.interactive');
         document.addEventListener('mousemove', (e) => {
@@ -235,14 +261,28 @@
             el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
         });
 
-        // ПОЛЗУНОК
+        // 2. ВЫПАДАЮЩЕЕ МЕНЮ ПРОФИЛЯ
+        const profileTrigger = document.getElementById('profileTrigger');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        
+        profileTrigger.addEventListener('click', (e) => {
+            e.stopPropagation(); // Чтобы клик не закрывал меню сразу
+            dropdownMenu.classList.toggle('open');
+        });
+
+        // Закрываем меню при клике в любое другое место
+        document.addEventListener('click', () => {
+            dropdownMenu.classList.remove('open');
+        });
+
+        // 3. ПОЛЗУНОК
         const track = document.getElementById('track');
         const fill = document.getElementById('fill');
         const thumb = document.getElementById('thumb');
         const sliderText = document.getElementById('slider-text');
         let isDragging = false;
 
-        updateUI(50);
+        updateUI(50); // Начальное положение
 
         track.addEventListener('mousedown', (e) => {
             isDragging = true;
@@ -283,7 +323,7 @@
             }
         }
 
-        // ГАЛАКТИКА
+        // 4. ГАЛАКТИКА
         const canvas = document.getElementById('galaxyCanvas');
         const ctx = canvas.getContext('2d');
         
