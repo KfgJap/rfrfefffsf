@@ -1,127 +1,272 @@
-// Ждем полной загрузки HTML
-document.addEventListener("DOMContentLoaded", () => {
+:root {
+    --primary: #4f8cff;
+    --primary-glow: rgba(79, 140, 255, 0.3);
+    --bg: #04060b;
+    --surface: rgba(18, 24, 38, 0.5);
+    --surface-hover: rgba(30, 40, 60, 0.7);
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #ffffff;
+    --text-muted: #8b9bb4;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
-    // 1. КАСТОМНЫЙ КУРСОР
-    const cursor = document.getElementById('cursor');
-    const interactables = document.querySelectorAll('.interactive, .btn-play, .btn-version, .icon-btn');
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: 'Syne', sans-serif; user-select: none; cursor: none;
+}
 
-    document.addEventListener('mousemove', (e) => {
-        if (cursor) {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        }
-    });
+body {
+    height: 100vh;
+    background-color: var(--bg);
+    background-image: radial-gradient(circle at 50% 50%, #0a1128 0%, #04060b 100%);
+    color: var(--text);
+    overflow: hidden;
+}
 
-    interactables.forEach(el => {
-        el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
-        el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
-    });
+/* --- ФОНОВЫЕ ЗВЕЗДЫ --- */
+.stars-bg {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: 
+        radial-gradient(1.5px 1.5px at 15% 25%, #fff, transparent),
+        radial-gradient(1px 1px at 65% 75%, #fff, transparent),
+        radial-gradient(2px 2px at 45% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 85% 45%, #fff, transparent);
+    background-size: 250px 250px;
+    opacity: 1; transition: opacity 0.5s ease;
+}
 
-    // 2. ВЫЕЗЖАЮЩЕЕ МЕНЮ
-    const menuBtn = document.getElementById('menuBtn');
-    const sideMenu = document.getElementById('sideMenu');
-    const closeMenuBtn = document.getElementById('closeMenuBtn');
+/* --- КУРСОР --- */
+.cursor {
+    position: fixed; width: 8px; height: 8px;
+    background: var(--primary); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 15px var(--primary-glow);
+    transition: width 0.3s var(--ease-out), height 0.3s var(--ease-out), background 0.3s, border 0.3s;
+}
+.cursor.hovering {
+    width: 32px; height: 32px; background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid var(--primary);
+}
 
-    if (menuBtn && sideMenu && closeMenuBtn) {
-        menuBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); 
-            sideMenu.classList.add('open');
-        });
+/* --- КАНВАС ГАЛАКТИКИ --- */
+.galaxy-canvas {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 1000px; height: 1000px; z-index: 1; pointer-events: none;
+    mix-blend-mode: screen; opacity: 0.8; transition: opacity 0.5s ease;
+}
 
-        closeMenuBtn.addEventListener('click', () => {
-            sideMenu.classList.remove('open');
-        });
-    }
+/* --- ЛОГОТИП --- */
+.logo {
+    position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+    font-size: 26px; font-weight: 800; letter-spacing: 12px; 
+    color: #fff; z-index: 20; text-shadow: 0 0 20px var(--primary-glow);
+}
 
-    // 3. ПОЛЗУНОК ГРАФИКИ
-    const track = document.getElementById('track');
-    const fill = document.getElementById('fill');
-    const thumb = document.getElementById('thumb');
-    const sliderText = document.getElementById('slider-text');
-    const starsBg = document.getElementById('starsBg');
-    const canvas = document.getElementById('galaxyCanvas');
-    let isDragging = false;
+/* --- ОБЩИЙ СЛОЙ --- */
+.ui-layer {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; padding: 40px 50px; pointer-events: none;
+}
 
-    if (track) {
-        updateGraphicsUI(50);
+/* --- СТИЛЬ ПАНЕЛЕЙ (Стекло) --- */
+.ui-panel {
+    background: var(--surface);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    transition: all 0.3s var(--ease-out);
+}
+.ui-panel:hover {
+    background: var(--surface-hover); border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
 
-        track.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            track.classList.add('active');
-            updateGraphicsSlider(e);
-        });
+/* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
+.top-bar { display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto; z-index: 30; }
+.top-left { display: flex; align-items: center; gap: 15px; }
 
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) updateGraphicsSlider(e);
-        });
+.menu-btn { width: 46px; height: 46px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+.menu-btn svg { width: 22px; height: 22px; fill: var(--text-muted); transition: fill 0.3s; }
+.menu-btn:hover svg { fill: var(--primary); }
 
-        window.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                setTimeout(() => track.classList.remove('active'), 1000);
-            }
-        });
+.profile-card { display: flex; align-items: center; gap: 15px; padding: 8px 20px 8px 8px; cursor: pointer; }
+.avatar { width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), #a855f7); }
+.user-info { display: flex; flex-direction: column; }
+.username { font-size: 15px; font-weight: 700; }
+.version { font-size: 11px; color: var(--primary); font-weight: 600; }
 
-        function updateGraphicsSlider(e) {
-            let rect = track.getBoundingClientRect();
-            let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-            updateGraphicsUI(x);
-        }
+/* --- ВЫДВИЖНОЕ МЕНЮ --- */
+.side-menu {
+    position: absolute; top: 0; left: -350px; width: 320px; height: 100vh;
+    background: rgba(10, 15, 25, 0.95); backdrop-filter: blur(30px);
+    border-right: 1px solid var(--border); z-index: 100; padding: 30px;
+    display: flex; flex-direction: column; gap: 30px; transition: left 0.4s var(--ease-out);
+}
+.side-menu.open { left: 0; }
 
-        function updateGraphicsUI(pos) {
-            fill.style.width = pos + '%';
-            thumb.style.left = pos + '%';
+.close-menu {
+    position: absolute; top: 30px; right: 30px;
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; background: rgba(255,255,255,0.05); transition: 0.3s;
+}
+.close-menu:hover { background: rgba(255,255,255,0.15); transform: rotate(90deg); }
+.close-menu svg { width: 20px; height: 20px; fill: #fff; }
 
-            if (pos < 33) {
-                sliderText.textContent = 'Low';
-                sliderText.style.left = '10%';
-                canvas.style.opacity = '0.2'; 
-                starsBg.style.opacity = '0.1'; 
-                window.currentParticles = 1500; 
-            } else if (pos > 66) {
-                sliderText.textContent = 'High';
-                sliderText.style.left = '90%';
-                canvas.style.opacity = '1'; 
-                starsBg.style.opacity = '1';
-                window.currentParticles = 6000; 
-            } else {
-                sliderText.textContent = 'Medium';
-                sliderText.style.left = '50%';
-                canvas.style.opacity = '0.6';
-                starsBg.style.opacity = '0.5';
-                window.currentParticles = 3500; 
-            }
-        }
-    }
+.menu-title { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #fff; margin-top: 20px; }
+.settings-group { display: flex; flex-direction: column; gap: 10px; }
+.settings-group label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    // 4. ПОЛЗУНОК ОЗУ
-    const ramSlider = document.getElementById('ramSlider');
-    const ramFill = document.getElementById('ramFill');
-    const ramThumb = document.getElementById('ramThumb');
-    const ramValue = document.getElementById('ramValue');
-    let isDraggingRam = false;
+/* Ползунок ОЗУ */
+.ram-slider { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative; cursor: pointer; }
+.ram-fill { position: absolute; left: 0; top: 0; height: 100%; width: 40%; background: var(--primary); border-radius: 2px; }
+.ram-thumb { position: absolute; left: 40%; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; background: #fff; border-radius: 50%; pointer-events: none; }
+.ram-value { font-size: 14px; font-weight: 700; color: var(--primary); text-align: right; margin-top: 5px; }
 
-    if (ramSlider) {
-        ramSlider.addEventListener('mousedown', (e) => { 
-            isDraggingRam = true; 
-            updateRam(e); 
-        });
+/* Кнопки папок */
+.folder-btn {
+    display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+    color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+}
+.folder-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
+.folder-btn svg { width: 18px; height: 18px; fill: var(--text-muted); }
 
-        window.addEventListener('mousemove', (e) => { 
-            if (isDraggingRam) updateRam(e); 
-        });
+/* --- КНОПКА PLAY --- */
+.center-play {
+    position: absolute; left: 55%; top: 50%; transform: translate(-50%, -50%);
+    pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 20;
+}
+.btn-play {
+    position: relative; background: #ffffff; color: #000000; font-size: 24px; font-weight: 800; letter-spacing: 6px;
+    padding: 22px 110px; border-radius: 16px; border: none;
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1); cursor: pointer; transition: all 0.3s var(--spring);
+}
+.btn-play:hover {
+    transform: translateY(-4px) scale(1.02); color: var(--primary);
+    box-shadow: 0 15px 40px rgba(255, 255, 255, 0.2), 0 0 20px var(--primary-glow);
+}
+.btn-version { background: transparent; border: none; color: var(--text-muted); font-size: 13px; font-weight: 600; letter-spacing: 1px; cursor: pointer; }
+.btn-version:hover { color: #fff; }
 
-        window.addEventListener('mouseup', () => { 
-            isDraggingRam = false; 
-        });
+/* --- КНОПКИ СПРАВА --- */
+.nav-actions { display: flex; gap: 12px; }
+.icon-btn { width: 46px; height: 46px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+.icon-btn svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.3s; }
+.icon-btn:hover svg { fill: #fff; }
 
-        function updateRam(e) {
-            let rect = ramSlider.getBoundingClientRect();
-            let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-            let gb = Math.round(2 + (x / 100) * 14);
-            ramFill.style.width = x + '%';
-            ramThumb.style.left = x + '%';
-            ramValue.textContent = gb + ' GB';
-        }
-    }
-});
+/* --- ПОЛЗУНОК ГРАФИКИ --- */
+.bottom-bar { display: flex; justify-content: center; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); pointer-events: auto; z-index: 20; }
+.slider-wrapper { display: flex; align-items: center; gap: 25px; padding: 15px 35px; border-radius: 16px; }
+.slider-label { font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
+.slider-track { width: 250px; height: 4px; background: rgba(0, 0, 0, 0.6); border-radius: 2px; position: relative; cursor: pointer; }
+.slider-fill { position: absolute; left: 0; top: 0; height: 100%; width: 50%; background: var(--primary); border-radius: 2px; pointer-events: none; }
+.slider-thumb { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; background: #fff; border-radius: 50%; pointer-events: none; transition: transform 0.2s var(--spring); }
+.slider-track:hover .slider-thumb { transform: translate(-50%, -50%) scale(1.2); }
+.slider-text { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: var(--primary); opacity: 0; transition: 0.3s; pointer-events: none; }
+.slider-track:hover .slider-text, .slider-track.active .slider-text { opacity: 1; }
+
+/* --- ПАЛИТРА --- */
+.palette-btn {
+    position: absolute; bottom: 40px; right: 50px; width: 50px; height: 50px;
+    border-radius: 14px; display: flex; justify-content: center; align-items: center;
+    cursor: pointer; z-index: 30; pointer-events: auto;
+}
+.palette-btn svg { width: 24px; height: 24px; fill: var(--text); transition: fill 0.3s; }
+.palette-btn:hover svg { fill: var(--primary); }
+
+.color-picker-popup {
+    position: absolute; bottom: 110px; right: 50px;
+    padding: 20px; border-radius: 20px; z-index: 30; pointer-events: auto;
+    display: flex; flex-direction: column; gap: 15px; align-items: center;
+    opacity: 0; pointer-events: none; transform: translateY(20px);
+    transition: all 0.4s var(--ease-out);
+}
+.color-picker-popup.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+.color-wheel {
+    width: 140px; height: 140px; border-radius: 50%;
+    background: radial-gradient(circle, white 0%, transparent 60%), conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+    position: relative; cursor: crosshair; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+.wheel-picker {
+    position: absolute; width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid #fff; background: var(--primary);
+    transform: translate(-50%, -50%); pointer-events: none;
+}
+
+/* ========================================= */
+/* НОВЫЕ ОКНА (Версии и Аккаунт) */
+/* ========================================= */
+
+.modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
+    z-index: 200; display: flex; justify-content: center; align-items: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+.modal-box {
+    background: rgba(15, 22, 38, 0.95); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    transform: translateY(20px) scale(0.95); transition: all 0.4s var(--spring);
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
+
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.02);
+}
+.modal-header h2 { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+.close-modal { width: 32px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; background: rgba(255,255,255,0.05); transition: 0.3s; }
+.close-modal:hover { background: rgba(255,255,255,0.15); transform: rotate(90deg); }
+.close-modal svg { width: 16px; height: 16px; fill: white; }
+
+/* --- ОКНО ВЕРСИЙ --- */
+.version-modal { width: 400px; max-height: 80vh; }
+.version-list {
+    padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+.version-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 20px; border-radius: 12px;
+    background: rgba(255,255,255,0.02); border: 1px solid transparent;
+    cursor: pointer; transition: all 0.2s ease;
+}
+.version-item:hover { background: rgba(255,255,255,0.06); transform: translateX(5px); }
+.version-item.active { background: rgba(79, 140, 255, 0.1); border-color: var(--primary); box-shadow: 0 0 15px rgba(79, 140, 255, 0.1); }
+.v-name { font-size: 15px; font-weight: 700; color: #fff; }
+.v-type { font-size: 11px; font-weight: 600; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; }
+.version-item.active .v-type { color: var(--primary); background: rgba(79, 140, 255, 0.15); }
+
+/* --- ОКНО АККАУНТА --- */
+.account-modal { width: 600px; }
+.account-content { display: flex; padding: 30px; gap: 30px; }
+.skin-preview {
+    width: 150px; height: 250px; background: rgba(255,255,255,0.05);
+    border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px;
+    display: flex; justify-content: center; align-items: center;
+    color: var(--text-muted); font-size: 14px; font-weight: 700;
+}
+.account-form { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.account-form label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: block; }
+.account-form input, .account-form select {
+    width: 100%; padding: 14px; border-radius: 10px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    color: #fff; font-family: 'Syne', sans-serif; font-size: 15px; outline: none;
+    transition: border 0.3s;
+}
+.account-form input:focus, .account-form select:focus { border-color: var(--primary); }
+.btn-save-account {
+    margin-top: 25px; padding: 15px; border-radius: 10px;
+    background: var(--primary); color: #fff; border: none;
+    font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.3s;
+}
+.btn-save-account:hover { transform: translateY(-2px); box-shadow: 0 10px 20px var(--primary-glow); }
