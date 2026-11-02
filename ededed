@@ -1,161 +1,206 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Nebula Launcher</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body>
-    <!-- СЛОИ ФОНА (Галактика и Звезды) -->
-    <div class="bg-layer">
-        <div class="galaxy"></div>
-        <div class="stars"></div>
-        <div class="nebula"></div>
-    </div>
+:root {
+    --primary: #5e9eff;
+    --bg: #030407;
+    --panel: rgba(15, 22, 40, 0.6);
+    --border: rgba(255, 255, 255, 0.1);
+    --text: #fff;
+    --text-dim: #8892b0;
+}
 
-    <!-- КУРСОР -->
-    <div class="cursor" id="cursor"></div>
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: 'Manrope', sans-serif;
+    cursor: none;
+}
 
-    <!-- ПРОФИЛЬ (Слева сверху) -->
-    <div class="profile glass">
-        <div class="avatar"></div>
-        <div class="nickname">Мик версия</div>
-    </div>
+body {
+    height: 100vh;
+    background-color: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+}
 
-    <!-- НАСТРОЙКИ (Справа сверху) -->
-    <div class="top-actions">
-        <button class="icon-btn glass">
-            <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
-        </button>
-        <button class="icon-btn glass">
-            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
-    </div>
+/* --- ФОН (Галактика и Звезды) --- */
+.bg-layer {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
 
-    <!-- ЦЕНТР: Кнопки -->
-    <div class="center-menu">
-        <button class="play-btn">Играть</button>
-        <button class="version-btn">Выбрать версию</button>
-    </div>
+.galaxy {
+    position: absolute; top: 50%; left: 50%;
+    width: 200vw; height: 200vw;
+    background: conic-gradient(from 0deg, transparent, rgba(94, 158, 255, 0.15), transparent, rgba(138, 43, 226, 0.1), transparent);
+    border-radius: 50%;
+    filter: blur(80px);
+    transform: translate(-50%, -50%) rotate(0deg);
+    animation: spin 120s linear infinite;
+}
 
-    <!-- НИЗ: Ползунок -->
-    <div class="slider-container glass">
-        <span class="slider-label">Графика</span>
-        <div class="slider-track" id="sliderTrack">
-            <div class="slider-fill" id="sliderFill"></div>
-            <div class="slider-thumb" id="sliderThumb"></div>
-        </div>
-        <div class="slider-marks">
-            <span class="mark" id="mark0">Слабо</span>
-            <span class="mark active" id="mark1">Средне</span>
-            <span class="mark" id="mark2">Мощно</span>
-        </div>
-    </div>
+@keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
 
-    <!-- ПАЛИТРА: Кнопка вызова -->
-    <button class="palette-btn glass" id="paletteBtn">
-        <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-    </button>
+.stars {
+    position: absolute; inset: -100%;
+    background-image: 
+        radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+        radial-gradient(1px 1px at 70% 60%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 40% 80%, #fff, transparent);
+    background-size: 400px 400px;
+    opacity: 0.6;
+    animation: drift 100s linear infinite;
+}
 
-    <!-- ПАЛИТРА: Окно -->
-    <div class="palette-menu glass" id="paletteMenu">
-        <div class="color-wheel-wrap">
-            <div class="color-wheel" id="colorWheel">
-                <div class="wheel-picker" id="wheelPicker"></div>
-            </div>
-        </div>
-        <div class="hex-wrap">
-            <label>HEX Код</label>
-            <input type="text" id="hexInput" value="#5E9EFF" maxlength="7">
-        </div>
-    </div>
+@keyframes drift { 100% { transform: rotate(5deg) translate(50px, 50px); } }
 
-    <script>
-        // КУРСОР
-        const cursor = document.getElementById('cursor');
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        });
-        document.querySelectorAll('button, .profile, .palette-btn').forEach(el => {
-            el.addEventListener('mouseenter', () => cursor.style.transform = 'translate(-50%, -50%) scale(2.5)');
-            el.addEventListener('mouseleave', () => cursor.style.transform = 'translate(-50%, -50%) scale(1)');
-        });
+.nebula {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 80vw; height: 80vh;
+    background: radial-gradient(circle, rgba(94, 158, 255, 0.15) 0%, transparent 70%);
+    filter: blur(100px);
+}
 
-        // ПАЛИТРА (Открытие)
-        const paletteBtn = document.getElementById('paletteBtn');
-        const paletteMenu = document.getElementById('paletteMenu');
-        paletteBtn.addEventListener('click', () => {
-            paletteMenu.classList.toggle('open');
-        });
+/* --- СТЕКЛО --- */
+.glass {
+    background: var(--panel);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.4s ease;
+}
+.glass:hover {
+    border-color: rgba(94, 158, 255, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(94, 158, 255, 0.2);
+    transform: translateY(-2px);
+}
 
-        // ПАЛИТРА (Цвет)
-        const wheel = document.getElementById('colorWheel');
-        const picker = document.getElementById('wheelPicker');
-        const hexInput = document.getElementById('hexInput');
+/* --- КУРСОР --- */
+.cursor {
+    position: fixed;
+    width: 6px; height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px var(--primary);
+    transition: transform 0.3s ease;
+}
 
-        function setThemeColor(hex) {
-            document.documentElement.style.setProperty('--primary', hex);
-            hexInput.value = hex.toUpperCase();
-            picker.style.backgroundColor = hex;
-        }
+/* --- ПРОФИЛЬ --- */
+.profile {
+    position: absolute; top: 40px; left: 40px;
+    display: flex; align-items: center; gap: 15px;
+    padding: 10px 25px 10px 10px;
+    border-radius: 50px;
+    z-index: 10;
+}
+.avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #1e2433; border: 1px solid var(--primary);
+}
+.nickname { font-weight: 700; font-size: 14px; letter-spacing: 1px; }
 
-        // Выбор цвета ТОЛЬКО по клику
-        wheel.addEventListener('click', (e) => {
-            let rect = wheel.getBoundingClientRect();
-            let x = e.clientX - rect.left - rect.width / 2;
-            let y = e.clientY - rect.top - rect.height / 2;
-            let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
-            if (angle < 0) angle += 360;
-            
-            // Перевод угла в HEX
-            let hue = angle;
-            let hex = hslToHex(hue, 100, 60);
-            setThemeColor(hex);
-            
-            // Двигаем маркер
-            let radius = rect.width / 2 - 10;
-            picker.style.left = (Math.cos(angle * Math.PI / 180 - Math.PI / 2) * radius + rect.width / 2) + 'px';
-            picker.style.top = (Math.sin(angle * Math.PI / 180 - Math.PI / 2) * radius + rect.height / 2) + 'px';
-        });
+/* --- НАСТРОЙКИ --- */
+.top-actions {
+    position: absolute; top: 40px; right: 40px;
+    display: flex; gap: 12px; z-index: 10;
+}
+.icon-btn {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer;
+}
+.icon-btn svg { width: 20px; height: 20px; fill: var(--text-dim); transition: 0.3s; }
+.icon-btn:hover svg { fill: var(--primary); }
 
-        function hslToHex(h, s, l) {
-            l /= 100;
-            const a = s * Math.min(l, 1 - l) / 100;
-            const f = n => {
-                const k = (n + h / 30) % 12;
-                const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-                return Math.round(255 * color).toString(16).padStart(2, '0');
-            };
-            return `#${f(0)}${f(8)}${f(4)}`;
-        }
+/* --- ЦЕНТР --- */
+.center-menu {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    z-index: 10;
+}
+.play-btn {
+    background: linear-gradient(180deg, rgba(94, 158, 255, 0.2), transparent);
+    border: 1px solid var(--primary);
+    color: #fff; font-size: 24px; font-weight: 800; letter-spacing: 4px;
+    padding: 20px 80px; border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 0 30px rgba(94, 158, 255, 0.2);
+    transition: 0.4s ease;
+}
+.play-btn:hover {
+    box-shadow: 0 0 50px rgba(94, 158, 255, 0.4);
+    background: linear-gradient(180deg, rgba(94, 158, 255, 0.4), transparent);
+}
+.version-btn {
+    background: transparent; border: none; color: var(--text-dim);
+    font-weight: 600; font-size: 14px; letter-spacing: 1px; cursor: pointer;
+    transition: 0.3s;
+}
+.version-btn:hover { color: var(--primary); }
 
-        // ПОЛЗУНОК
-        const track = document.getElementById('sliderTrack');
-        const fill = document.getElementById('sliderFill');
-        const thumb = document.getElementById('sliderThumb');
-        let isDragging = false;
+/* --- ПОЛЗУНОК --- */
+.slider-container {
+    position: absolute; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 20px;
+    padding: 15px 30px; border-radius: 40px; z-index: 10;
+}
+.slider-label { font-size: 12px; font-weight: 800; color: var(--text-dim); letter-spacing: 1px; }
+.slider-track {
+    position: relative; width: 200px; height: 6px;
+    background: rgba(255,255,255,0.1); border-radius: 3px;
+}
+.slider-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    width: 50%; background: var(--primary); border-radius: 3px;
+}
+.slider-thumb {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px; height: 20px; background: #fff; border-radius: 50%;
+    cursor: pointer; box-shadow: 0 0 10px var(--primary);
+}
+.slider-marks { display: flex; gap: 15px; }
+.mark { font-size: 11px; font-weight: 700; color: var(--text-dim); }
+.mark.active { color: var(--primary); }
 
-        track.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            updateSlider(e);
-        });
+/* --- ПАЛИТРА --- */
+.palette-btn {
+    position: absolute; bottom: 40px; right: 40px;
+    width: 54px; height: 54px; border-radius: 16px;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; z-index: 20;
+}
+.palette-btn svg { width: 24px; height: 24px; fill: var(--text-dim); }
+.palette-btn:hover svg { fill: var(--primary); }
 
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) updateSlider(e);
-        });
+.palette-menu {
+    position: absolute; bottom: 110px; right: 40px;
+    width: 300px; padding: 20px; border-radius: 20px;
+    display: flex; align-items: center; gap: 20px;
+    z-index: 20;
+    opacity: 0; pointer-events: none;
+    transform: translateY(20px) scale(0.95);
+    transition: 0.4s ease;
+}
+.palette-menu.open { opacity: 1; pointer-events: all; transform: translateY(0) scale(1); }
 
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-
-        function updateSlider(e) {
-            let rect = track.getBoundingClientRect();
-            let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-            fill.style.width = x + '%';
-            thumb.style.left = x + '%';
-        }
-    </script>
-</body>
-</html>
+.color-wheel {
+    position: relative; width: 80px; height: 80px;
+    border-radius: 50%;
+    background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+    cursor: crosshair;
+}
+.wheel-picker {
+    position: absolute; width: 14px; height: 14px;
+    border: 2px solid #fff; border-radius: 50%;
+    transform: translate(-50%, -50%); pointer-events: none;
+}
+.hex-wrap { display: flex; flex-direction: column; gap: 5px; }
+.hex-wrap label { font-size: 11px; font-weight: 800; color: var(--text-dim); }
+.hex-wrap input {
+    width: 100px; padding: 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: rgba(0,0,0,0.3);
+    color: #fff; font-family: monospace; text-align: center;
+}
