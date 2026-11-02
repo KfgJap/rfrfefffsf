@@ -1,126 +1,71 @@
 // ==========================================
-// ЛОГИКА ИНТЕРФЕЙСА (Курсор, меню, ползунки)
+// ЛОГИКА ПАЛИТРЫ ЦВЕТОВ
 // ==========================================
 
-// 1. КАСТОМНЫЙ КУРСОР
-const cursor = document.getElementById('cursor');
-const interactables = document.querySelectorAll('.interactive, .btn-play, .btn-version, .icon-btn');
+const paletteBtn = document.getElementById('paletteBtn');
+const colorPopup = document.getElementById('colorPopup');
+const colorWheel = document.getElementById('colorWheel');
+const wheelPicker = document.getElementById('wheelPicker');
+let currentHue = 220; // Начальный оттенок (синий)
 
-document.addEventListener('mousemove', (e) => {
-    cursor.style.left = e.clientX + 'px';
-    cursor.style.top = e.clientY + 'px';
+// Открытие/закрытие окна палитры
+paletteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    colorPopup.classList.toggle('open');
 });
 
-interactables.forEach(el => {
-    el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
-    el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
-});
+// Обработка выбора цвета
+let isPickingColor = false;
 
-
-// 2. ВЫЕЗЖАЮЩЕЕ МЕНЮ (Settings)
-const menuBtn = document.getElementById('menuBtn');
-const sideMenu = document.getElementById('sideMenu');
-const closeMenuBtn = document.getElementById('closeMenuBtn');
-
-menuBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // Чтобы клик не срабатывал на другие элементы
-    sideMenu.classList.add('open');
-});
-
-closeMenuBtn.addEventListener('click', () => {
-    sideMenu.classList.remove('open');
-});
-
-
-// 3. ПОЛЗУНОК ГРАФИКИ (Влияет на галактику)
-const track = document.getElementById('track');
-const fill = document.getElementById('fill');
-const thumb = document.getElementById('thumb');
-const sliderText = document.getElementById('slider-text');
-const starsBg = document.getElementById('starsBg');
-const canvas = document.getElementById('galaxyCanvas');
-let isDragging = false;
-
-updateGraphicsUI(50); // Начальное положение (посередине)
-
-track.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    track.classList.add('active');
-    updateGraphicsSlider(e);
-});
-
-window.addEventListener('mousemove', (e) => {
-    if (isDragging) updateGraphicsSlider(e);
-});
-
-window.addEventListener('mouseup', () => {
-    if (isDragging) {
-        isDragging = false;
-        setTimeout(() => track.classList.remove('active'), 1000);
-    }
-});
-
-function updateGraphicsSlider(e) {
-    let rect = track.getBoundingClientRect();
-    let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    updateGraphicsUI(x);
-}
-
-function updateGraphicsUI(pos) {
-    fill.style.width = pos + '%';
-    thumb.style.left = pos + '%';
-
-    // Меняем текст и нагрузку
-    if (pos < 33) {
-        sliderText.textContent = 'Low';
-        sliderText.style.left = '10%';
-        canvas.style.opacity = '0.2'; 
-        starsBg.style.opacity = '0.1'; 
-        window.currentParticles = 1500; // Мало частиц (слабое железо)
-    } else if (pos > 66) {
-        sliderText.textContent = 'High';
-        sliderText.style.left = '90%';
-        canvas.style.opacity = '1'; 
-        starsBg.style.opacity = '1';
-        window.currentParticles = 6000; // Максимум красоты
-    } else {
-        sliderText.textContent = 'Medium';
-        sliderText.style.left = '50%';
-        canvas.style.opacity = '0.6';
-        starsBg.style.opacity = '0.5';
-        window.currentParticles = 3500; // Среднее
-    }
-}
-
-
-// 4. ПОЛЗУНОК ОЗУ (RAM)
-const ramSlider = document.getElementById('ramSlider');
-const ramFill = document.getElementById('ramFill');
-const ramThumb = document.getElementById('ramThumb');
-const ramValue = document.getElementById('ramValue');
-let isDraggingRam = false;
-
-ramSlider.addEventListener('mousedown', (e) => { 
-    isDraggingRam = true; 
-    updateRam(e); 
+colorWheel.addEventListener('mousedown', (e) => { 
+    isPickingColor = true; 
+    pickColor(e); 
 });
 
 window.addEventListener('mousemove', (e) => { 
-    if (isDraggingRam) updateRam(e); 
+    if (isPickingColor) pickColor(e); 
 });
 
 window.addEventListener('mouseup', () => { 
-    isDraggingRam = false; 
+    isPickingColor = false; 
 });
 
-function updateRam(e) {
-    let rect = ramSlider.getBoundingClientRect();
-    let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+function pickColor(e) {
+    let rect = colorWheel.getBoundingClientRect();
+    let x = e.clientX - rect.left - rect.width / 2;
+    let y = e.clientY - rect.top - rect.height / 2;
     
-    // Переводим проценты в ГБ (от 2 до 16)
-    let gb = Math.round(2 + (x / 100) * 14);
+    let radius = Math.sqrt(x*x + y*y);
+    let maxRadius = rect.width / 2;
     
-    ramFill.style.width = x + '%';
-    ramThumb.style.left = x + '%';
-    ramValue.textContent = gb + ' GB';
+    let lightness = 60;
+    let saturation = 100;
+    
+    // Если кликнули в самый центр - ставим белый цвет
+    if (radius < maxRadius * 0.15) {
+        lightness = 100;
+        saturation = 0;
+    } else {
+        // Иначе вычисляем угол (оттенок)
+        let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
+        if (angle < 0) angle += 360;
+        currentHue = angle;
+    }
+
+    // Меняем глобальные CSS переменные
+    let hex = `hsl(${currentHue}, ${saturation}%, ${lightness}%)`;
+    document.documentElement.style.setProperty('--primary', hex);
+    
+    // Меняем цвет свечения (с прозрачностью)
+    let rgba = `hsla(${currentHue}, ${saturation}%, ${lightness}%, 0.3)`;
+    document.documentElement.style.setProperty('--primary-glow', rgba);
+
+    // Двигаем кружок-маркер по палитре
+    let radiusLimit = maxRadius - 8;
+    let px = Math.cos(currentHue * Math.PI / 180 - Math.PI / 2) * (radius < maxRadius * 0.15 ? 0 : radiusLimit) + rect.width / 2;
+    let py = Math.sin(currentHue * Math.PI / 180 - Math.PI / 2) * (radius < maxRadius * 0.15 ? 0 : radiusLimit) + rect.height / 2;
+    
+    wheelPicker.style.left = px + 'px';
+    wheelPicker.style.top = py + 'px';
+    wheelPicker.style.background = hex;
 }
