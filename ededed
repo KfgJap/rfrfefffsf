@@ -1,71 +1,127 @@
-// ==========================================
-// ЛОГИКА ПАЛИТРЫ ЦВЕТОВ
-// ==========================================
+// Ждем полной загрузки HTML
+document.addEventListener("DOMContentLoaded", () => {
 
-const paletteBtn = document.getElementById('paletteBtn');
-const colorPopup = document.getElementById('colorPopup');
-const colorWheel = document.getElementById('colorWheel');
-const wheelPicker = document.getElementById('wheelPicker');
-let currentHue = 220; // Начальный оттенок (синий)
+    // 1. КАСТОМНЫЙ КУРСОР
+    const cursor = document.getElementById('cursor');
+    const interactables = document.querySelectorAll('.interactive, .btn-play, .btn-version, .icon-btn');
 
-// Открытие/закрытие окна палитры
-paletteBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    colorPopup.classList.toggle('open');
-});
+    document.addEventListener('mousemove', (e) => {
+        if (cursor) {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        }
+    });
 
-// Обработка выбора цвета
-let isPickingColor = false;
+    interactables.forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+    });
 
-colorWheel.addEventListener('mousedown', (e) => { 
-    isPickingColor = true; 
-    pickColor(e); 
-});
+    // 2. ВЫЕЗЖАЮЩЕЕ МЕНЮ
+    const menuBtn = document.getElementById('menuBtn');
+    const sideMenu = document.getElementById('sideMenu');
+    const closeMenuBtn = document.getElementById('closeMenuBtn');
 
-window.addEventListener('mousemove', (e) => { 
-    if (isPickingColor) pickColor(e); 
-});
+    if (menuBtn && sideMenu && closeMenuBtn) {
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            sideMenu.classList.add('open');
+        });
 
-window.addEventListener('mouseup', () => { 
-    isPickingColor = false; 
-});
-
-function pickColor(e) {
-    let rect = colorWheel.getBoundingClientRect();
-    let x = e.clientX - rect.left - rect.width / 2;
-    let y = e.clientY - rect.top - rect.height / 2;
-    
-    let radius = Math.sqrt(x*x + y*y);
-    let maxRadius = rect.width / 2;
-    
-    let lightness = 60;
-    let saturation = 100;
-    
-    // Если кликнули в самый центр - ставим белый цвет
-    if (radius < maxRadius * 0.15) {
-        lightness = 100;
-        saturation = 0;
-    } else {
-        // Иначе вычисляем угол (оттенок)
-        let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
-        if (angle < 0) angle += 360;
-        currentHue = angle;
+        closeMenuBtn.addEventListener('click', () => {
+            sideMenu.classList.remove('open');
+        });
     }
 
-    // Меняем глобальные CSS переменные
-    let hex = `hsl(${currentHue}, ${saturation}%, ${lightness}%)`;
-    document.documentElement.style.setProperty('--primary', hex);
-    
-    // Меняем цвет свечения (с прозрачностью)
-    let rgba = `hsla(${currentHue}, ${saturation}%, ${lightness}%, 0.3)`;
-    document.documentElement.style.setProperty('--primary-glow', rgba);
+    // 3. ПОЛЗУНОК ГРАФИКИ
+    const track = document.getElementById('track');
+    const fill = document.getElementById('fill');
+    const thumb = document.getElementById('thumb');
+    const sliderText = document.getElementById('slider-text');
+    const starsBg = document.getElementById('starsBg');
+    const canvas = document.getElementById('galaxyCanvas');
+    let isDragging = false;
 
-    // Двигаем кружок-маркер по палитре
-    let radiusLimit = maxRadius - 8;
-    let px = Math.cos(currentHue * Math.PI / 180 - Math.PI / 2) * (radius < maxRadius * 0.15 ? 0 : radiusLimit) + rect.width / 2;
-    let py = Math.sin(currentHue * Math.PI / 180 - Math.PI / 2) * (radius < maxRadius * 0.15 ? 0 : radiusLimit) + rect.height / 2;
-    
-    wheelPicker.style.left = px + 'px';
-    wheelPicker.style.top = py + 'px';
-    wheelPicker.style.background = hex;
-}
+    if (track) {
+        updateGraphicsUI(50);
+
+        track.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            track.classList.add('active');
+            updateGraphicsSlider(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) updateGraphicsSlider(e);
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                setTimeout(() => track.classList.remove('active'), 1000);
+            }
+        });
+
+        function updateGraphicsSlider(e) {
+            let rect = track.getBoundingClientRect();
+            let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            updateGraphicsUI(x);
+        }
+
+        function updateGraphicsUI(pos) {
+            fill.style.width = pos + '%';
+            thumb.style.left = pos + '%';
+
+            if (pos < 33) {
+                sliderText.textContent = 'Low';
+                sliderText.style.left = '10%';
+                canvas.style.opacity = '0.2'; 
+                starsBg.style.opacity = '0.1'; 
+                window.currentParticles = 1500; 
+            } else if (pos > 66) {
+                sliderText.textContent = 'High';
+                sliderText.style.left = '90%';
+                canvas.style.opacity = '1'; 
+                starsBg.style.opacity = '1';
+                window.currentParticles = 6000; 
+            } else {
+                sliderText.textContent = 'Medium';
+                sliderText.style.left = '50%';
+                canvas.style.opacity = '0.6';
+                starsBg.style.opacity = '0.5';
+                window.currentParticles = 3500; 
+            }
+        }
+    }
+
+    // 4. ПОЛЗУНОК ОЗУ
+    const ramSlider = document.getElementById('ramSlider');
+    const ramFill = document.getElementById('ramFill');
+    const ramThumb = document.getElementById('ramThumb');
+    const ramValue = document.getElementById('ramValue');
+    let isDraggingRam = false;
+
+    if (ramSlider) {
+        ramSlider.addEventListener('mousedown', (e) => { 
+            isDraggingRam = true; 
+            updateRam(e); 
+        });
+
+        window.addEventListener('mousemove', (e) => { 
+            if (isDraggingRam) updateRam(e); 
+        });
+
+        window.addEventListener('mouseup', () => { 
+            isDraggingRam = false; 
+        });
+
+        function updateRam(e) {
+            let rect = ramSlider.getBoundingClientRect();
+            let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            let gb = Math.round(2 + (x / 100) * 14);
+            ramFill.style.width = x + '%';
+            ramThumb.style.left = x + '%';
+            ramValue.textContent = gb + ' GB';
+        }
+    }
+});
