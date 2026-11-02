@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Nebula Launcher</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.3);
+            --primary-glow: rgba(99, 102, 241, 0.5);
             --bg: #030407;
-            --glass-bg: rgba(255, 255, 255, 0.02);
-            --glass-hover: rgba(255, 255, 255, 0.06);
-            --border: rgba(255, 255, 255, 0.08);
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
+            --text: #ffffff;
+            --text-muted: #64748b;
             --smooth: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         * {
             margin: 0; padding: 0; box-sizing: border-box;
-            font-family: 'Inter', sans-serif; user-select: none;
+            font-family: 'Outfit', sans-serif; user-select: none;
             cursor: none;
         }
 
@@ -28,11 +25,9 @@
             background-color: var(--bg);
             color: var(--text);
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* КУРСОР */
+        /* --- КУРСОР --- */
         .cursor {
             position: fixed; width: 8px; height: 8px;
             background: var(--primary); border-radius: 50%;
@@ -42,139 +37,140 @@
             transition: width 0.3s, height 0.3s, background 0.3s, border 0.3s;
         }
         .cursor.hovering {
-            width: 28px; height: 28px; background: transparent;
+            width: 30px; height: 30px; background: transparent;
             border: 2px solid var(--primary);
         }
 
-        /* ЖИВОЙ КОСМОС */
-        .cosmos { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-        
-        /* ВРАЩАЮЩАЯСЯ ГАЛАКТИКА */
-        .galaxy {
-            position: absolute; top: 50%; left: 50%;
-            width: 200vw; height: 200vw;
-            transform: translate(-50%, -50%) rotate(0deg);
-            /* Спиральный градиент */
-            background: conic-gradient(from 0deg, transparent 0%, rgba(99, 102, 241, 0.1) 20%, transparent 40%, rgba(168, 85, 247, 0.1) 60%, transparent 80%, rgba(99, 102, 241, 0.1) 100%);
-            border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.8;
-            animation: spin 100s linear infinite;
-        }
-        @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-
-        /* Туманности для глубины */
-        .nebula {
-            position: absolute; border-radius: 50%; filter: blur(100px);
-            opacity: 0.4; animation: drift 25s infinite alternate ease-in-out;
-        }
-        .nebula-1 { width: 60vw; height: 60vh; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); top: -10%; left: -10%; }
-        .nebula-2 { width: 50vw; height: 50vh; background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%); bottom: -10%; right: -10%; animation-delay: -10s; }
-        @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.1); } }
-
-        /* Звезды */
-        .stars {
-            position: absolute; inset: -50%;
+        /* --- ФОН: ЗВЕЗДЫ --- */
+        .stars-bg {
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
             background-image: 
                 radial-gradient(1px 1px at 10% 20%, #fff, transparent),
                 radial-gradient(1.5px 1.5px at 80% 40%, #fff, transparent),
-                radial-gradient(1px 1px at 40% 80%, #fff, transparent);
+                radial-gradient(2px 2px at 40% 80%, #fff, transparent),
+                radial-gradient(1px 1px at 60% 60%, #fff, transparent);
             background-size: 300px 300px;
-            opacity: 0.6;
+            opacity: 0.4;
         }
-
-        /* ВЕРХНЯЯ ПАНЕЛЬ */
-        .top-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 30px 40px; z-index: 10;
-        }
-
-        /* СТЕКЛО */
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            transition: all 0.4s var(--smooth);
-        }
-
-        .user-profile {
-            display: flex; align-items: center; gap: 12px;
-            padding: 8px 20px 8px 8px; border-radius: 50px; cursor: pointer;
-        }
-        .user-profile:hover {
-            background: var(--glass-hover); border-color: rgba(255,255,255,0.2);
-        }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #a855f7); }
-        .username { font-size: 14px; font-weight: 600; }
-
-        .nav-actions { display: flex; gap: 12px; }
-        .icon-btn {
-            width: 44px; height: 44px; border-radius: 12px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-        }
-        .icon-btn:hover { background: var(--glass-hover); border-color: rgba(255,255,255,0.2); }
-        .icon-btn svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.3s; }
-        .icon-btn:hover svg { fill: var(--text); }
-
-        /* ЦЕНТР */
-        .main-content { flex: 1; display: flex; justify-content: center; align-items: center; z-index: 10; }
         
-        .play-button {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            color: white; border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 22px 90px; font-size: 20px; font-weight: 800; letter-spacing: 2px;
-            border-radius: 16px; cursor: pointer; position: relative; overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        .nebula {
+            position: absolute; border-radius: 50%; filter: blur(120px);
+            opacity: 0.3; z-index: 0; pointer-events: none;
+        }
+        .nebula-1 { width: 60vw; height: 60vh; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); top: -20%; left: -20%; }
+        .nebula-2 { width: 50vw; height: 50vh; background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%); bottom: -20%; right: 20%; }
+
+        /* --- ПРОРИСОВАННАЯ ГАЛАКТИКА (Canvas) --- */
+        .galaxy-canvas {
+            position: absolute;
+            right: 5%; top: 50%; transform: translateY(-50%);
+            width: 600px; height: 600px;
+            z-index: 1; pointer-events: none;
+            opacity: 0.9;
+        }
+
+        /* --- ИНТЕРФЕЙС --- */
+        .ui-layer {
+            position: absolute; inset: 0; z-index: 10;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 40px 50px;
+        }
+
+        /* Верхняя панель */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+
+        .auth-buttons {
+            display: flex; gap: 15px;
+        }
+
+        .btn-auth {
+            background: transparent; border: none;
+            color: var(--text-muted); padding: 12px 24px; border-radius: 12px;
+            font-size: 15px; font-weight: 700; letter-spacing: 1px;
             transition: all 0.4s var(--smooth);
+            position: relative;
+        }
+        .btn-auth:hover { color: white; transform: translateY(-2px); }
+        
+        .btn-auth.primary {
+            background: var(--primary); border-color: var(--primary);
+            color: white;
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.3);
+        }
+        .btn-auth.primary:hover { box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5); }
+
+        .icon-settings {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(10px); transition: 0.4s var(--smooth);
+        }
+        .icon-settings:hover { background: rgba(255, 255, 255, 0.1); transform: rotate(90deg); }
+        .icon-settings svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.3s; }
+        .icon-settings:hover svg { fill: white; }
+
+        /* Кнопка PLAY */
+        .center-play {
+            position: absolute; left: 25%; top: 50%; transform: translate(-50%, -50%);
+        }
+
+        .btn-play {
+            background: #fff;
+            color: #000; font-size: 22px; font-weight: 900; letter-spacing: 4px;
+            padding: 20px 90px; border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1);
+            transition: all 0.4s var(--smooth);
+            position: relative; overflow: hidden;
+            border: none;
             text-transform: uppercase;
         }
-        
-        .play-button:hover {
-            transform: translateY(-3px) scale(1.02);
-            border-color: var(--primary);
-            box-shadow: 0 15px 50px var(--primary-glow), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            background: rgba(99, 102, 241, 0.1);
+
+        .btn-play:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 50px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.2);
+            color: var(--primary);
         }
 
-        /* НИЗ */
-        .bottom-bar { padding: 40px; display: flex; justify-content: center; z-index: 10; }
-
-        .settings-card {
-            display: flex; align-items: center; gap: 24px;
-            padding: 16px 32px; border-radius: 20px; position: relative;
+        /* Нижняя панель (Графика без рамок) */
+        .bottom-bar {
+            display: flex; justify-content: center; padding-bottom: 10px;
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
         }
 
-        .settings-label { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
-
-        .slider-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 30px; }
-
-        /* Всплывающее слово над ползунком */
-        .slider-tooltip {
-            position: absolute; top: 0; left: 50%; transform: translateX(-50%) translateY(10px);
-            font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;
-            opacity: 0; pointer-events: none; transition: all 0.3s var(--smooth);
-            text-shadow: 0 0 10px var(--primary-glow);
+        .slider-container {
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
         }
-        .slider-wrapper:hover .slider-tooltip, .slider-wrapper.active .slider-tooltip {
-            opacity: 1; transform: translateX(-50%) translateY(0);
+
+        .slider-label {
+            font-size: 12px; font-weight: 800; color: var(--text-muted);
+            letter-spacing: 2px; text-transform: uppercase;
         }
 
         .slider-track {
-            width: 240px; height: 6px; background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px; position: relative; cursor: pointer;
+            width: 280px; height: 4px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px; position: relative; cursor: pointer;
         }
+        
         .slider-fill {
             position: absolute; left: 0; top: 0; height: 100%; width: 50%;
-            background: var(--primary); border-radius: 10px; box-shadow: 0 0 15px var(--primary-glow);
+            background: #fff; border-radius: 2px;
         }
+        
         .slider-thumb {
             position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-            width: 20px; height: 20px; background: white; border-radius: 50%;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); transition: transform 0.2s;
+            width: 16px; height: 16px; background: #fff; border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255,255,255,0.5); transition: transform 0.2s;
         }
-        .slider-track:hover .slider-thumb { transform: translate(-50%, -50%) scale(1.2); }
+        .slider-track:hover .slider-thumb { transform: translate(-50%, -50%) scale(1.3); }
+
+        .slider-text {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            font-size: 13px; font-weight: 800; color: #fff;
+            opacity: 0; transition: 0.3s; letter-spacing: 1px;
+        }
+        .slider-track:hover .slider-text, .slider-track.active .slider-text { opacity: 1; }
 
     </style>
 </head>
@@ -182,45 +178,39 @@
     <div class="cursor" id="cursor"></div>
 
     <!-- Фон -->
-    <div class="cosmos">
-        <div class="galaxy"></div>
-        <div class="nebula nebula-1"></div>
-        <div class="nebula nebula-2"></div>
-        <div class="stars"></div>
-    </div>
+    <div class="stars-bg"></div>
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
 
-    <!-- Верхняя панель -->
-    <div class="top-bar">
-        <div class="user-profile glass interactive">
-            <div class="avatar"></div>
-            <div class="username">Login</div>
-        </div>
-        <div class="nav-actions">
-            <div class="icon-btn glass interactive">
+    <!-- Canvas для галактики -->
+    <canvas class="galaxy-canvas" id="galaxyCanvas"></canvas>
+
+    <!-- Интерфейс -->
+    <div class="ui-layer">
+        <div class="top-bar">
+            <div class="auth-buttons">
+                <button class="btn-auth interactive">Login</button>
+                <button class="btn-auth primary interactive">Register</button>
+            </div>
+            <div class="icon-settings interactive">
                 <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
             </div>
-            <div class="icon-btn glass interactive">
-                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </div>
         </div>
     </div>
 
-    <!-- Центр -->
-    <div class="main-content">
-        <button class="play-button interactive">Play</button>
+    <!-- Кнопка PLAY -->
+    <div class="center-play">
+        <button class="btn-play interactive">Play</button>
     </div>
 
-    <!-- Низ -->
+    <!-- Нижняя панель -->
     <div class="bottom-bar">
-        <div class="settings-card glass">
-            <span class="settings-label">Graphics</span>
-            <div class="slider-wrapper" id="sliderWrapper">
-                <div class="slider-tooltip" id="tooltip">Medium</div>
-                
-                <div class="slider-track interactive" id="track">
-                    <div class="slider-fill" id="fill"></div>
-                    <div class="slider-thumb" id="thumb"></div>
-                </div>
+        <div class="slider-container">
+            <div class="slider-label">Graphics</div>
+            <div class="slider-track interactive" id="track">
+                <div class="slider-fill" id="fill"></div>
+                <div class="slider-thumb" id="thumb"></div>
+                <div class="slider-text" id="slider-text">Medium</div>
             </div>
         </div>
     </div>
@@ -228,7 +218,7 @@
     <script>
         // 1. КУРСОР
         const cursor = document.getElementById('cursor');
-        const interactables = document.querySelectorAll('.interactive');
+        const interactables = document.querySelectorAll('.interactive, .btn-play, .btn-auth, .icon-settings, .slider-track');
         document.addEventListener('mousemove', (e) => {
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
@@ -242,16 +232,14 @@
         const track = document.getElementById('track');
         const fill = document.getElementById('fill');
         const thumb = document.getElementById('thumb');
-        const wrapper = document.getElementById('sliderWrapper');
-        const tooltip = document.getElementById('tooltip');
-        
+        const sliderText = document.getElementById('slider-text');
         let isDragging = false;
 
         updateUI(50);
 
         track.addEventListener('mousedown', (e) => {
             isDragging = true;
-            wrapper.classList.add('active');
+            track.classList.add('active');
             updateSlider(e);
         });
 
@@ -260,9 +248,9 @@
         });
 
         window.addEventListener('mouseup', () => {
-            if(isDragging) {
+            if (isDragging) {
                 isDragging = false;
-                setTimeout(() => wrapper.classList.remove('active'), 1000); 
+                setTimeout(() => track.classList.remove('active'), 1000);
             }
         });
 
@@ -277,16 +265,90 @@
             thumb.style.left = pos + '%';
 
             if (pos < 33) {
-                tooltip.textContent = 'Low';
-                tooltip.style.left = '10%';
+                sliderText.textContent = 'Low';
+                sliderText.style.left = '10%';
             } else if (pos > 66) {
-                tooltip.textContent = 'High';
-                tooltip.style.left = '90%';
+                sliderText.textContent = 'High';
+                sliderText.style.left = '90%';
             } else {
-                tooltip.textContent = 'Medium';
-                tooltip.style.left = '50%';
+                sliderText.textContent = 'Medium';
+                sliderText.style.left = '50%';
             }
         }
+
+        // 3. ГЕНЕРАЦИЯ ГАЛАКТИКИ НА CANVAS
+        const canvas = document.getElementById('galaxyCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = 600;
+        let height = canvas.height = 600;
+        let centerX = width / 2;
+        let centerY = height / 2;
+
+        const particles = [];
+        const numParticles = 1500;
+        const arms = 3; // Количество рукавов
+        const spiralTightness = 3.5;
+
+        // Создаем частицы
+        for (let i = 0; i < numParticles; i++) {
+            const armIndex = i % arms;
+            // Угол разброса
+            const angleOffset = (armIndex * (Math.PI * 2)) / arms;
+            // Расстояние от центра
+            const distance = Math.random() * 250 + 10;
+            // Закручивание
+            const angle = distance * 0.01 * spiralTightness + angleOffset + (Math.random() - 0.5) * 0.5;
+            
+            // Смещение для размытия рукава
+            const x = Math.cos(angle) * distance + (Math.random() - 0.5) * 30;
+            const y = Math.sin(angle) * distance + (Math.random() - 0.5) * 30;
+
+            // Размер и цвет
+            const size = Math.random() * 1.5 + 0.5;
+            const opacity = Math.random() * 0.5 + 0.3;
+            
+            // Цвета от синего к фиолетовому
+            const color = Math.random() > 0.5 ? `rgba(99, 102, 241, ${opacity})` : `rgba(168, 85, 247, ${opacity})`;
+
+            particles.push({ x, y, size, color, distance, angleOffset });
+        }
+
+        let rotation = 0;
+
+        function animateGalaxy() {
+            ctx.clearRect(0, 0, width, height);
+            rotation += 0.001;
+
+            // Рисуем свечение в центре (ядро)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 80;
+            ctx.shadowColor = '#6366f1';
+            ctx.fill();
+            ctx.shadowBlur = 0; // Сброс
+
+            // Рисуем частицы
+            particles.forEach(p => {
+                // Вращаем всю галактику
+                const currentAngle = p.distance * 0.01 * spiralTightness + p.angleOffset + rotation;
+                
+                // Пересчитываем координаты (без учета разброса для плавности, разброс был при создании)
+                // Чтобы было красиво, используем оригинальные x, y и просто вращаем их
+                const rotatedX = p.x * Math.cos(rotation) - p.y * Math.sin(rotation);
+                const rotatedY = p.x * Math.sin(rotation) + p.y * Math.cos(rotation);
+
+                ctx.beginPath();
+                ctx.arc(centerX + rotatedX, centerY + rotatedY, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animateGalaxy);
+        }
+
+        animateGalaxy();
     </script>
 </body>
 </html>
