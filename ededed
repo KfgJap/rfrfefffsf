@@ -1,101 +1,126 @@
 // ==========================================
-// ЛОГИКА ГАЛАКТИКИ (Canvas)
+// ЛОГИКА ИНТЕРФЕЙСА (Курсор, меню, ползунки)
 // ==========================================
 
+// 1. КАСТОМНЫЙ КУРСОР
+const cursor = document.getElementById('cursor');
+const interactables = document.querySelectorAll('.interactive, .btn-play, .btn-version, .icon-btn');
+
+document.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+});
+
+interactables.forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+});
+
+
+// 2. ВЫЕЗЖАЮЩЕЕ МЕНЮ (Settings)
+const menuBtn = document.getElementById('menuBtn');
+const sideMenu = document.getElementById('sideMenu');
+const closeMenuBtn = document.getElementById('closeMenuBtn');
+
+menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Чтобы клик не срабатывал на другие элементы
+    sideMenu.classList.add('open');
+});
+
+closeMenuBtn.addEventListener('click', () => {
+    sideMenu.classList.remove('open');
+});
+
+
+// 3. ПОЛЗУНОК ГРАФИКИ (Влияет на галактику)
+const track = document.getElementById('track');
+const fill = document.getElementById('fill');
+const thumb = document.getElementById('thumb');
+const sliderText = document.getElementById('slider-text');
+const starsBg = document.getElementById('starsBg');
 const canvas = document.getElementById('galaxyCanvas');
-const ctx = canvas.getContext('2d');
+let isDragging = false;
 
-let width = canvas.width = 1000;
-let height = canvas.height = 1000;
-let centerX = width / 2;
-let centerY = height / 2;
+updateGraphicsUI(50); // Начальное положение (посередине)
 
-const particles = [];
-const maxParticles = 6000; // Максимальное количество для High качества
-const arms = 3; // Количество рукавов
-const spiralTightness = 4.0;
+track.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    track.classList.add('active');
+    updateGraphicsSlider(e);
+});
 
-// Генерация частиц (звезд)
-for (let i = 0; i < maxParticles; i++) {
-    const armIndex = i % arms;
-    const angleOffset = (armIndex * (Math.PI * 2)) / arms;
-    
-    // Расстояние от центра (делаем плотнее к центру)
-    const distance = Math.pow(Math.random(), 0.6) * 450 + 10; 
-    
-    // Угол с закручиванием
-    const angle = distance * 0.01 * spiralTightness + angleOffset + (Math.random() - 0.5) * 0.8;
-    
-    // Разброс (чтобы рукава были не идеальной линией, а сгустком)
-    const spread = 15 + (distance * 0.08); 
-    const x = Math.cos(angle) * distance + (Math.random() - 0.5) * spread;
-    const y = Math.sin(angle) * distance + (Math.random() - 0.5) * spread;
+window.addEventListener('mousemove', (e) => {
+    if (isDragging) updateGraphicsSlider(e);
+});
 
-    const size = Math.random() * 2 + 0.4;
-    const opacity = Math.random() * 0.8 + 0.2;
-    
-    // Окрашиваем частицы (центр - белый, середина - синяя, края - фиолетовые)
-    let color;
-    if (distance < 100) {
-        color = `rgba(255, 255, 255, ${opacity})`;
-    } else if (distance < 250) {
-        color = `rgba(79, 140, 255, ${opacity})`; // Это цвет мы будем менять из палитры
+window.addEventListener('mouseup', () => {
+    if (isDragging) {
+        isDragging = false;
+        setTimeout(() => track.classList.remove('active'), 1000);
+    }
+});
+
+function updateGraphicsSlider(e) {
+    let rect = track.getBoundingClientRect();
+    let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    updateGraphicsUI(x);
+}
+
+function updateGraphicsUI(pos) {
+    fill.style.width = pos + '%';
+    thumb.style.left = pos + '%';
+
+    // Меняем текст и нагрузку
+    if (pos < 33) {
+        sliderText.textContent = 'Low';
+        sliderText.style.left = '10%';
+        canvas.style.opacity = '0.2'; 
+        starsBg.style.opacity = '0.1'; 
+        window.currentParticles = 1500; // Мало частиц (слабое железо)
+    } else if (pos > 66) {
+        sliderText.textContent = 'High';
+        sliderText.style.left = '90%';
+        canvas.style.opacity = '1'; 
+        starsBg.style.opacity = '1';
+        window.currentParticles = 6000; // Максимум красоты
     } else {
-        color = `rgba(168, 85, 247, ${opacity})`;
+        sliderText.textContent = 'Medium';
+        sliderText.style.left = '50%';
+        canvas.style.opacity = '0.6';
+        starsBg.style.opacity = '0.5';
+        window.currentParticles = 3500; // Среднее
     }
-
-    particles.push({ x, y, size, color });
 }
 
-let rotation = 0;
 
-// Эта переменная управляется ползунком графики из script.js
-window.currentParticles = maxParticles; 
+// 4. ПОЛЗУНОК ОЗУ (RAM)
+const ramSlider = document.getElementById('ramSlider');
+const ramFill = document.getElementById('ramFill');
+const ramThumb = document.getElementById('ramThumb');
+const ramValue = document.getElementById('ramValue');
+let isDraggingRam = false;
 
-function animateGalaxy() {
-    ctx.clearRect(0, 0, width, height);
-    rotation += 0.0008; // Скорость вращения
+ramSlider.addEventListener('mousedown', (e) => { 
+    isDraggingRam = true; 
+    updateRam(e); 
+});
 
-    // Получаем текущий цвет из CSS переменных (чтобы галактика красилась вместе с кнопками)
-    let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+window.addEventListener('mousemove', (e) => { 
+    if (isDraggingRam) updateRam(e); 
+});
+
+window.addEventListener('mouseup', () => { 
+    isDraggingRam = false; 
+});
+
+function updateRam(e) {
+    let rect = ramSlider.getBoundingClientRect();
+    let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
     
-    // Свечение в центре галактики
-    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 200);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    gradient.addColorStop(0.1, currentColor);
-    gradient.addColorStop(0.5, 'transparent');
+    // Переводим проценты в ГБ (от 2 до 16)
+    let gb = Math.round(2 + (x / 100) * 14);
     
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 200, 0, Math.PI * 2);
-    ctx.fillStyle = gradient;
-    ctx.fill();
-
-    // Включаем режим смешивания для яркости
-    ctx.globalCompositeOperation = 'lighter';
-    
-    // Рисуем столько частиц, сколько разрешено ползунком
-    for (let i = 0; i < window.currentParticles; i++) {
-        const p = particles[i];
-        
-        // Вращаем каждую частицу
-        const rotatedX = p.x * Math.cos(rotation) - p.y * Math.sin(rotation);
-        const rotatedY = p.x * Math.sin(rotation) + p.y * Math.cos(rotation);
-
-        ctx.beginPath();
-        ctx.arc(centerX + rotatedX, centerY + rotatedY, p.size, 0, Math.PI * 2);
-        
-        // Если это частица из "синей" зоны, красим её в цвет палитры
-        if (p.color.includes('79, 140, 255')) {
-             ctx.fillStyle = currentColor; 
-        } else {
-             ctx.fillStyle = p.color;
-        }
-        ctx.fill();
-    }
-
-    ctx.globalCompositeOperation = 'source-over';
-    requestAnimationFrame(animateGalaxy);
+    ramFill.style.width = x + '%';
+    ramThumb.style.left = x + '%';
+    ramValue.textContent = gb + ' GB';
 }
-
-// Запуск анимации
-animateGalaxy();
