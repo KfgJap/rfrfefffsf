@@ -15,7 +15,6 @@
             --border: rgba(255, 255, 255, 0.1);
             --text: #f1f5f9;
             --text-dim: #8892b0;
-            
             --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
             --smooth: cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -50,9 +49,19 @@
 
         /* КОСМОС */
         .cosmos { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .galaxy {
+            position: absolute; top: 50%; left: 50%;
+            width: 150vw; height: 150vw;
+            transform: translate(-50%, -50%) rotate(0deg);
+            background: conic-gradient(from 0deg, transparent, var(--accent-glow), transparent, rgba(138, 43, 226, 0.1), transparent);
+            border-radius: 50%; filter: blur(60px); opacity: 0.5;
+            animation: rotateGalaxy 120s linear infinite;
+        }
+        @keyframes rotateGalaxy { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
         .nebula {
             position: absolute; border-radius: 50%; filter: blur(120px);
-            opacity: 0.5; animation: drift 25s infinite alternate ease-in-out;
+            opacity: 0.6; animation: drift 25s infinite alternate ease-in-out;
         }
         .nebula-1 { width: 80vw; height: 80vh; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); top: -30%; left: -20%; }
         .nebula-2 { width: 70vw; height: 70vh; background: radial-gradient(circle, rgba(138, 43, 226, 0.2) 0%, transparent 70%); bottom: -20%; right: -20%; animation-delay: -12s; animation-duration: 30s; }
@@ -64,7 +73,7 @@
                 radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent),
                 radial-gradient(1px 1px at 70% 60%, #fff, transparent),
                 radial-gradient(2px 2px at 40% 80%, #fff, transparent);
-            background-size: 350px 350px; z-index: 1; opacity: 0.7;
+            background-size: 350px 350px; z-index: 1; opacity: 0.8;
             animation: rotate 150s linear infinite;
         }
         @keyframes rotate { 100% { transform: rotate(5deg); } }
@@ -79,24 +88,22 @@
         .glass:hover {
             background: var(--panel-hover); border-color: var(--accent);
             box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 35px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
-            transform: translateY(-3px) scale(1.01);
+            transform: translateY(-3px) scale(1.02);
         }
 
-        /* ВЕРХ */
-        .top-bar { height: 80px; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .logo { font-size: 22px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #fff; }
-        .logo span { color: var(--accent); transition: color 0.4s; }
-        .nav-icons { display: flex; gap: 12px; }
+        /* ВЕРХНИЕ УГЛЫ */
+        .top-left { position: absolute; top: 40px; left: 40px; z-index: 10; }
+        .profile { display: flex; align-items: center; gap: 15px; padding: 10px 25px 10px 10px; border-radius: 50px; cursor: pointer; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #1e2433; border: 1px solid var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+        .nickname { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+
+        .top-right { position: absolute; top: 40px; right: 40px; display: flex; gap: 12px; z-index: 10; }
         .nav-btn { width: 44px; height: 44px; border-radius: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .nav-btn svg { width: 20px; height: 20px; fill: var(--text-dim); transition: fill 0.4s; }
         .nav-btn:hover svg { fill: var(--accent); }
 
-        /* ЛЕВЫЙ УГОЛ */
-        .left-col { position: absolute; top: 100px; left: 40px; display: flex; flex-direction: column; gap: 20px; z-index: 10; }
-        .profile { display: flex; align-items: center; gap: 15px; padding: 10px 25px 10px 10px; border-radius: 50px; cursor: pointer; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #1e2433; border: 1px solid var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
-        .nickname { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
-        .socials { display: flex; gap: 12px; }
+        /* ЛЕВЫЙ НИЖНИЙ УГОЛ */
+        .bottom-left { position: absolute; bottom: 40px; left: 40px; display: flex; flex-direction: column; gap: 12px; z-index: 10; }
         .social-btn { width: 46px; height: 46px; border-radius: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .social-btn svg { width: 22px; height: 22px; fill: var(--text-dim); transition: all 0.4s var(--spring); }
         .social-btn:hover svg { fill: #fff; transform: scale(1.15); }
@@ -104,6 +111,7 @@
         /* ЦЕНТР */
         .center-col { flex: 1; display: flex; justify-content: center; align-items: center; z-index: 10; }
         .main-card { display: flex; flex-direction: column; align-items: center; gap: 25px; padding: 50px 80px; border-radius: 30px; }
+        
         .play-btn {
             display: flex; align-items: center; justify-content: center; gap: 15px;
             background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.03) 100%);
@@ -114,18 +122,24 @@
             box-shadow: 0 0 40px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.4);
             transition: all 0.6s var(--spring);
             text-transform: uppercase;
+            animation: pulseBtn 3s infinite alternate;
+        }
+        @keyframes pulseBtn {
+            0% { box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.4); }
+            100% { box-shadow: 0 0 60px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.4); }
         }
         .play-btn::before {
             content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
             transform: skewX(-25deg); transition: left 0.7s var(--smooth);
         }
-        .play-btn:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 0 80px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.5); }
+        .play-btn:hover { transform: translateY(-5px) scale(1.03); animation: none; box-shadow: 0 0 80px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.5); }
         .play-btn:hover::before { left: 150%; }
+
         .version-btn { font-size: 14px; font-weight: 700; color: var(--text-dim); background: transparent; border: none; cursor: pointer; transition: color 0.4s; letter-spacing: 1px; }
         .version-btn:hover { color: #fff; text-shadow: 0 0 10px var(--accent-glow); }
 
-        /* НИЖНИЙ ПОЛЗУНОК */
+        /* НИЖНИЙ ЦЕНТР (ПОЛЗУНОК) */
         .bottom-bar { height: 120px; display: flex; justify-content: center; align-items: center; z-index: 10; }
         .slider-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
         
@@ -146,7 +160,7 @@
         .thumb { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; background: #fff; border-radius: 50%; box-shadow: 0 0 20px var(--accent); transition: left 0.5s var(--spring), transform 0.3s var(--spring); }
         .track:hover .thumb { transform: translate(-50%, -50%) scale(1.2); }
 
-        /* ПАЛИТРА (Кнопка) */
+        /* ПРАВЫЙ НИЖНИЙ УГОЛ */
         .palette-btn {
             position: absolute; bottom: 40px; right: 40px;
             width: 54px; height: 54px; border-radius: 16px;
@@ -156,7 +170,6 @@
         .palette-btn svg { width: 24px; height: 24px; fill: var(--text-dim); transition: fill 0.3s; }
         .palette-btn:hover svg, .palette-btn.active svg { fill: var(--accent); }
 
-        /* ВЫПАДАЮЩЕЕ ОКНО ПАЛИТРЫ */
         .palette-popup {
             position: absolute; bottom: 105px; right: 40px;
             width: 320px; padding: 24px; border-radius: 24px;
@@ -167,10 +180,7 @@
             transform-origin: bottom right;
             transition: all 0.5s var(--spring);
         }
-        .palette-popup.open {
-            opacity: 1; pointer-events: all;
-            transform: translateY(0) scale(1);
-        }
+        .palette-popup.open { opacity: 1; pointer-events: all; transform: translateY(0) scale(1); }
 
         .color-wheel {
             position: relative; width: 90px; height: 90px;
@@ -199,36 +209,54 @@
             outline: none; transition: border 0.3s, box-shadow 0.3s; letter-spacing: 1px;
         }
         .hex-input:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+
+        /* ЦИТАТЫ */
+        .quote {
+            position: absolute; font-size: 14px; font-weight: 500; letter-spacing: 1px;
+            color: rgba(255,255,255,0.2); text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            opacity: 0; pointer-events: none; z-index: 2;
+            animation: floatQuote 10s forwards;
+        }
+        @keyframes floatQuote {
+            0% { transform: translateY(0); opacity: 0; filter: blur(4px); }
+            20% { opacity: 1; filter: blur(0); }
+            80% { opacity: 1; filter: blur(0); }
+            100% { transform: translateY(50px); opacity: 0; filter: blur(4px); }
+        }
     </style>
 </head>
 <body>
     <div class="cursor" id="cursor"></div>
 
+    <!-- ФОН -->
     <div class="cosmos">
+        <div class="galaxy"></div>
         <div class="nebula nebula-1"></div>
         <div class="nebula nebula-2"></div>
         <div class="stars"></div>
     </div>
 
-    <header class="top-bar">
-        <div class="logo">NEBULA<span>.</span></div>
-        <div class="nav-icons">
-            <div class="nav-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
-            <div class="nav-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
-        </div>
-    </header>
-
-    <aside class="left-col">
+    <!-- ЛЕВЫЙ ВЕРХНИЙ (Профиль) -->
+    <div class="top-left">
         <div class="profile glass interactive">
             <div class="avatar"></div>
             <div class="nickname">Мик версия</div>
         </div>
-        <div class="socials">
-            <div class="social-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z"/></svg></div>
-            <div class="social-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.84 1.17-5.19 3.44-.49.34-.94.5-1.34.49-.44-.01-1.29-.25-1.92-.46-.78-.26-1.4-.4-1.35-.85.02-.23.35-.47.98-.72 3.85-1.68 6.42-2.78 7.71-3.32 3.66-1.52 4.42-1.79 4.91-1.8.11 0 .35.03.5.13.13.09.17.21.18.3.01.09.02.27.01.36z"/></svg></div>
-        </div>
-    </aside>
+    </div>
 
+    <!-- ПРАВЫЙ ВЕРХНИЙ (Настройки) -->
+    <div class="top-right">
+        <div class="nav-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+        <div class="nav-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+    </div>
+
+    <!-- ЛЕВЫЙ НИЖНИЙ (Соцсети) -->
+    <div class="bottom-left">
+        <div class="social-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z"/></svg></div>
+        <div class="social-btn glass interactive"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.84 1.17-5.19 3.44-.49.34-.94.5-1.34.49-.44-.01-1.29-.25-1.92-.46-.78-.26-1.4-.4-1.35-.85.02-.23.35-.47.98-.72 3.85-1.68 6.42-2.78 7.71-3.32 3.66-1.52 4.42-1.79 4.91-1.8.11 0 .35.03.5.13.13.09.17.21.18.3.01.09.02.27.01.36z"/></svg></div>
+    </div>
+
+    <!-- ЦЕНТР (Играть) -->
     <main class="center-col">
         <div class="main-card glass">
             <button class="play-btn interactive">
@@ -239,6 +267,7 @@
         </div>
     </main>
 
+    <!-- НИЗ (Ползунок) -->
     <footer class="bottom-bar">
         <div class="slider-wrapper" id="sliderWrapper">
             <div class="slider-labels">
@@ -256,12 +285,11 @@
         </div>
     </footer>
 
-    <!-- Кнопка вызова палитры -->
+    <!-- ПРАВЫЙ НИЗ (Палитра) -->
     <div class="palette-btn glass interactive" id="paletteBtn">
         <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
     </div>
 
-    <!-- Окно палитры -->
     <div class="palette-popup glass" id="palettePopup">
         <div class="color-wheel interactive" id="colorWheel">
             <div class="wheel-picker" id="wheelPicker"></div>
@@ -272,8 +300,9 @@
         </div>
     </div>
 
+    <!-- СКРИПТЫ -->
     <script>
-        // --- КУРСОР ---
+        // Курсор
         const cursor = document.getElementById('cursor');
         const interactables = document.querySelectorAll('.interactive');
         document.addEventListener('mousemove', (e) => {
@@ -285,24 +314,22 @@
             el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
         });
 
-        // --- ПАЛИТРА ---
+        // Палитра
         const paletteBtn = document.getElementById('paletteBtn');
         const palettePopup = document.getElementById('palettePopup');
         const wheel = document.getElementById('colorWheel');
         const picker = document.getElementById('wheelPicker');
         const hexInput = document.getElementById('hexInput');
         
-        let currentHue = 215; // Синий
+        let currentHue = 215; 
         let currentSat = 100;
         let currentLight = 60;
 
-        // Открытие/закрытие окна
         paletteBtn.addEventListener('click', () => {
             palettePopup.classList.toggle('open');
             paletteBtn.classList.toggle('active');
         });
 
-        // Преобразование HSL в HEX
         function hslToHex(h, s, l) {
             l /= 100;
             const a = s * Math.min(l, 1 - l) / 100;
@@ -324,7 +351,6 @@
             picker.style.background = hex;
         }
 
-        // Выбор цвета на круге
         wheel.addEventListener('mousemove', (e) => {
             if (e.buttons !== 1) return;
             let rect = wheel.getBoundingClientRect();
@@ -346,7 +372,6 @@
             updateTheme(hex);
         });
 
-        // Ввод HEX
         hexInput.addEventListener('input', (e) => {
             let val = e.target.value;
             if (val.length === 7 && val.startsWith('#')) {
@@ -354,12 +379,11 @@
             }
         });
 
-        // Инициализация
         let initHex = hslToHex(currentHue, currentSat, currentLight);
         updateTheme(initHex);
         picker.style.left = '75%'; picker.style.top = '15%';
 
-        // --- ПОЛЗУНОК ---
+        // Ползунок
         const track = document.getElementById('sliderTrack');
         const fill = document.getElementById('sliderFill');
         const thumb = document.getElementById('sliderThumb');
