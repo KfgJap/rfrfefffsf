@@ -1,57 +1,28 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
 
 const mainMenu = document.getElementById('mainMenu');
 const gameUI = document.getElementById('gameUI');
 const playBtn = document.getElementById('playBtn');
 const backBtn = document.getElementById('backBtn');
 const missionText = document.getElementById('missionText');
-const victoryScreen = document.getElementById('victoryScreen');
-const victoryBackBtn = document.getElementById('victoryBackBtn');
-const resetBtn = document.getElementById('resetBtn');
-
-// Звуки (Web Audio API)
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioContext();
-function playSound(freq, type, duration) {
-    if(audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-}
 
 let gameRunning = false;
-let mission = 1;
-let worldRevived = false;
+let missionComplete = false;
 
-const player = { x: 0, y: 0, radius: 15, speed: 6 };
+// Игрок (Призрак)
+const player = { x: 0, y: 0, vx: 0, vy: 0, size: 16, speed: 6 };
 const camera = { x: 0, y: 0 };
 let targetX = 0, targetY = 0;
 let isMoving = false;
+
+// Окружение
+let deadTrees = [];
+let birds = [];
+let grass = [];
+let altar = { x: 1200, y: -800 };
 let particles = [];
-let lights = [];
-let sanctuary = { x: 1000, y: -500 };
-let natureParticles = []; // Для финала
-
-// Прогресс
-let progress = JSON.parse(localStorage.getItem('windGameProgress')) || { m1: false, m2: false };
-
-function updateMenuUI() {
-    const s1 = document.getElementById('status1');
-    const s2 = document.getElementById('status2');
-    const i1 = document.getElementById('mission1-item');
-    const i2 = document.getElementById('mission2-item');
-
-    if (progress.m1) { s1.innerText = '✔'; i1.classList.add('completed'); }
-    if (progress.m2) { s2.innerText = '✔'; i2.classList.add('completed'); }
-}
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -59,39 +30,46 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
-updateMenuUI();
 
-function initGame() {
-    player.x = 0; player.y = 0;
+// Генерация мира
+function initWorld() {
+    player.x = 0; player.y = 0; player.vx = 0; player.vy = 0;
     camera.x = 0; camera.y = 0;
     particles = [];
-    natureParticles = [];
-    victoryScreen.classList.remove('active');
-    worldRevived = false;
-    
-    // Определяем, с какой миссии начать
-    if (!progress.m1) {
-        mission = 1;
-        missionText.innerText = "Найди Святилище...";
-    } else if (!progress.m2) {
-        mission = 2;
-        missionText.innerText = "Собери Огоньки (0/5)";
-        spawnLights();
-    } else {
-        mission = 3;
-        missionText.innerText = "Все миссии пройдены!";
-        worldRevived = true;
-    }
-}
+    missionComplete = false;
+    missionText.innerText = "Find the Sacred Altar...";
 
-function spawnLights() {
-    lights = [];
+    // Мертвая трава (пиксели на земле)
+    grass = [];
+    for(let i=0; i<3000; i++) {
+        grass.push({
+            x: (Math.random() - 0.5) * 4000,
+            y: (Math.random() - 0.5) * 4000,
+            size: Math.random() * 3 + 1,
+            color: Math.random() > 0.8 ? '#1a1a1a' : '#0f0f0f'
+        });
+    }
+
+    // Мертвые деревья
+    deadTrees = [];
+    for(let i=0; i<40; i++) {
+        deadTrees.push({
+            x: (Math.random() - 0.5) * 4000,
+            y: (Math.random() - 0.5) * 4000,
+            height: Math.random() * 60 + 30,
+            width: Math.random() * 8 + 4
+        });
+    }
+
+    // Вороны (летают)
+    birds = [];
     for(let i=0; i<5; i++) {
-        lights.push({
-            x: (Math.random() - 0.5) * 2000,
-            y: (Math.random() - 0.5) * 2000,
-            collected: false,
-            pulse: Math.random() * Math.PI * 2
+        birds.push({
+            x: Math.random() * 2000 - 1000,
+            y: Math.random() * 1000 - 500,
+            speedX: Math.random() * 2 - 1,
+            speedY: Math.random() * 2 - 1,
+            wingState: 0
         });
     }
 }
@@ -100,7 +78,7 @@ playBtn.addEventListener('click', () => {
     mainMenu.style.display = 'none';
     gameUI.style.display = 'block';
     gameRunning = true;
-    initGame();
+    initWorld();
     requestAnimationFrame(update);
 });
 
@@ -110,21 +88,8 @@ backBtn.addEventListener('click', () => {
     mainMenu.style.display = 'flex';
 });
 
-victoryBackBtn.addEventListener('click', () => {
-    gameRunning = false;
-    gameUI.style.display = 'none';
-    mainMenu.style.display = 'flex';
-    updateMenuUI();
-});
-
-resetBtn.addEventListener('click', () => {
-    progress = { m1: false, m2: false };
-    localStorage.setItem('windGameProgress', JSON.stringify(progress));
-    location.reload();
-});
-
 window.addEventListener('mousedown', (e) => {
-    if (!gameRunning || worldRevived) return;
+    if (!gameRunning || missionComplete) return;
     targetX = e.clientX - canvas.width / 2 + camera.x;
     targetY = e.clientY - canvas.height / 2 + camera.y;
     isMoving = true;
@@ -133,6 +98,7 @@ window.addEventListener('mousedown', (e) => {
 function update() {
     if (!gameRunning) return;
 
+    // Движение
     if (isMoving) {
         let dx = targetX - player.x;
         let dy = targetY - player.y;
@@ -140,151 +106,122 @@ function update() {
         if (dist > 5) {
             player.x += (dx / dist) * player.speed;
             player.y += (dy / dist) * player.speed;
-            if (Math.random() > 0.4) particles.push({ x: player.x, y: player.y + 10, life: 1.0, size: Math.random() * 5 + 2 });
+            
+            // Пиксельный шлейф
+            if (Math.random() > 0.5) {
+                particles.push({ x: player.x, y: player.y + 5, life: 1.0, size: 4 });
+            }
         } else {
             isMoving = false;
         }
     }
 
-    camera.x += (player.x - camera.x) * 0.05;
-    camera.y += (player.y - camera.y) * 0.05;
+    camera.x += (player.x - camera.x) * 0.08;
+    camera.y += (player.y - camera.y) * 0.08;
 
-    particles.forEach((p, i) => { p.life -= 0.02; p.size *= 0.98; if (p.life <= 0) particles.splice(i, 1); });
+    particles.forEach((p, i) => {
+        p.life -= 0.05;
+        p.y += 1; // Падают вниз
+        if (p.life <= 0) particles.splice(i, 1);
+    });
 
-    if (mission === 1) {
-        let distToSanctuary = Math.hypot(sanctuary.x - player.x, sanctuary.y - player.y);
-        if (distToSanctuary < 100) {
-            playSound(600, 'sine', 1); // Звук завершения
-            progress.m1 = true;
-            localStorage.setItem('windGameProgress', JSON.stringify(progress));
-            
-            mission = 2;
-            missionText.innerText = "Собери Огоньки (0/5)";
-            spawnLights();
-        }
-    } else if (mission === 2) {
-        let collectedCount = 0;
-        lights.forEach(l => {
-            if (!l.collected) {
-                l.pulse += 0.05;
-                let dist = Math.hypot(l.x - player.x, l.y - player.y);
-                if (dist < player.radius + 30) {
-                    l.collected = true;
-                    playSound(800, 'triangle', 0.3); // Звук сбора
-                }
-            }
-            if (l.collected) collectedCount++;
-        });
-        missionText.innerText = `Собери Огоньки (${collectedCount}/5)`;
+    // Птицы летают
+    birds.forEach(b => {
+        b.x += b.speedX;
+        b.y += b.speedY;
+        b.wingState += 0.2;
         
-        if (collectedCount === 5) {
-            playSound(400, 'sine', 2); // Звук победы
-            progress.m2 = true;
-            localStorage.setItem('windGameProgress', JSON.stringify(progress));
-            
-            mission = 3;
-            worldRevived = true;
-            missionText.innerText = "Мир возрожден!";
-            
-            // Показываем экран победы с задержкой
-            setTimeout(() => victoryScreen.classList.add('active'), 2000);
-            
-            // Спавним частицы природы (листья)
-            for(let i=0; i<100; i++) {
-                natureParticles.push({
-                    x: (Math.random() - 0.5) * canvas.width,
-                    y: (Math.random() - 0.5) * canvas.height,
-                    speed: Math.random() * 2 + 1,
-                    size: Math.random() * 6 + 3,
-                    color: Math.random() > 0.5 ? '#4f8cff' : '#a855f7'
-                });
-            }
+        // Если улетела далеко - респавн
+        if (b.x < player.x - 1000 || b.x > player.x + 1000) {
+            b.x = player.x + (Math.random() > 0.5 ? 1200 : -1200);
+            b.y = player.y + (Math.random() * 800 - 400);
         }
-    }
+    });
 
-    if (worldRevived) {
-        // Анимация летящих листьев при победе
-        natureParticles.forEach(p => {
-            p.y += p.speed;
-            p.x += Math.sin(p.y * 0.01) * 2;
-            if (p.y > canvas.height) p.y = -10;
-        });
+    // Проверка финиша
+    if (!missionComplete) {
+        let distToAltar = Math.hypot(altar.x - player.x, altar.y - player.y);
+        if (distToAltar < 100) {
+            missionComplete = true;
+            missionText.innerText = "The Altar awakens...";
+        }
     }
 
     draw();
     requestAnimationFrame(update);
 }
 
+// Рисуем пиксельный прямоугольник
+function drawPixelRect(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+}
+
 function draw() {
-    // Фон (меняется при победе)
-    let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    if (worldRevived) {
-        grad.addColorStop(0, '#0a1128');
-        grad.addColorStop(1, '#1a2b4a'); // Светлее
-    } else {
-        grad.addColorStop(0, '#0a1128');
-        grad.addColorStop(1, '#02040a');
-    }
-    ctx.fillStyle = grad;
+    // Фон (темная земля)
+    ctx.fillStyle = '#050508';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     let cx = canvas.width / 2 - camera.x;
     let cy = canvas.height / 2 - camera.y;
 
-    // Параллакс-фон
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-    for(let i=0; i<10; i++) {
-        ctx.beginPath(); ctx.arc(cx - camera.x * 0.5 + i * 300, cy - camera.y * 0.5 + 200, 200, 0, Math.PI * 2); ctx.fill();
-    }
+    // Рисуем траву
+    grass.forEach(g => {
+        drawPixelRect(cx + g.x, cy + g.y, g.size, g.size, g.color);
+    });
 
-    // Если мир возрожден - рисуем летящие листья
-    if (worldRevived) {
-        natureParticles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.shadowBlur = 10; ctx.shadowColor = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-        });
+    // Рисуем Алтарь (Цель)
+    let ax = cx + altar.x, ay = cy + altar.y;
+    if (!missionComplete) {
+        // Мертвый алтарь (темный)
+        drawPixelRect(ax - 20, ay - 40, 40, 80, '#111');
+        drawPixelRect(ax - 30, ay + 40, 60, 20, '#1a1a1a');
+    } else {
+        // Оживший алтарь (светится)
+        ctx.shadowBlur = 40; ctx.shadowColor = '#4f8cff';
+        drawPixelRect(ax - 20, ay - 40, 40, 80, '#4f8cff');
+        drawPixelRect(ax - 30, ay + 40, 60, 20, '#a8b2d1');
         ctx.shadowBlur = 0;
     }
 
-    // Святилище (1 миссия)
-    if (mission === 1) {
-        let sx = cx + sanctuary.x, sy = cy + sanctuary.y;
-        ctx.fillStyle = 'rgba(79, 140, 255, 0.2)'; ctx.beginPath(); ctx.arc(sx, sy, 80, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#4f8cff'; ctx.shadowBlur = 40; ctx.shadowColor = '#4f8cff';
-        ctx.beginPath(); ctx.arc(sx, sy, 15, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    }
+    // Рисуем деревья
+    deadTrees.forEach(t => {
+        drawPixelRect(cx + t.x, cy + t.y, t.width, -t.height, '#0a0a0a');
+        // Ветки
+        drawPixelRect(cx + t.x - 10, cy + t.y - t.height * 0.6, 10, 4, '#0a0a0a');
+        drawPixelRect(cx + t.x + t.width, cy + t.y - t.height * 0.8, 15, 4, '#0a0a0a');
+    });
 
-    // Огоньки (2 миссия)
-    if (mission === 2) {
-        lights.forEach(l => {
-            if (!l.collected) {
-                let lx = cx + l.x, ly = cy + l.y;
-                let size = 8 + Math.sin(l.pulse) * 3;
-                ctx.fillStyle = '#a855f7'; ctx.shadowBlur = 25; ctx.shadowColor = '#a855f7';
-                ctx.beginPath(); ctx.arc(lx, ly, size, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-            }
-        });
-    }
+    // Рисуем птиц (пиксельные вороны)
+    birds.forEach(b => {
+        let bx = cx + b.x, by = cy + b.y;
+        let wingY = Math.sin(b.wingState) * 4;
+        ctx.fillStyle = '#000';
+        // Тело
+        drawPixelRect(bx, by, 6, 4, '#000');
+        // Крылья
+        drawPixelRect(bx - 4, by + wingY, 4, 2, '#000');
+        drawPixelRect(bx + 6, by + wingY, 4, 2, '#000');
+    });
 
     // Шлейф
     particles.forEach(p => {
-        let px = cx + p.x, py = cy + p.y;
-        ctx.fillStyle = `rgba(79, 140, 255, ${p.life * 0.5})`;
-        ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
+        drawPixelRect(cx + p.x, cy + p.y, p.size, p.size, `rgba(79, 140, 255, ${p.life})`);
     });
 
-    // Игрок (Призрак)
+    // Игрок (Пиксельный Призрак)
     let px = cx + player.x, py = cy + player.y;
-    ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 30; ctx.shadowColor = '#4f8cff';
-    ctx.beginPath();
-    ctx.arc(px, py - 5, 12, Math.PI, 0); 
-    ctx.lineTo(px + 12, py + 15); ctx.lineTo(px + 6, py + 10);
-    ctx.lineTo(px, py + 15); ctx.lineTo(px - 6, py + 10);
-    ctx.lineTo(px - 12, py + 15); ctx.closePath(); ctx.fill();
+    
+    // Тело (капля)
+    ctx.shadowBlur = 20; ctx.shadowColor = '#fff';
+    drawPixelRect(px - 8, py - 12, 16, 16, '#fff'); // Голова
+    drawPixelRect(px - 6, py + 4, 12, 8, '#fff');   // Тело
+    drawPixelRect(px - 8, py + 12, 4, 4, '#fff');   // Хвост 1
+    drawPixelRect(px - 2, py + 12, 4, 4, '#fff');   // Хвост 2
+    drawPixelRect(px + 4, py + 12, 4, 4, '#fff');   // Хвост 3
     ctx.shadowBlur = 0;
 
     // Глаза
-    ctx.fillStyle = '#0a1128';
-    ctx.beginPath(); ctx.arc(px - 4, py - 5, 2, 0, Math.PI * 2); ctx.arc(px + 4, py - 5, 2, 0, Math.PI * 2); ctx.fill();
+    drawPixelRect(px - 4, py - 6, 2, 4, '#050508');
+    drawPixelRect(px + 2, py - 6, 2, 4, '#050508');
 }
