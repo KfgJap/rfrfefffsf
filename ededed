@@ -1,45 +1,191 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Georgia', serif; }
-body { background-color: #000; overflow: hidden; color: white; cursor: crosshair; }
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+// Экраны
+const introScreen = document.getElementById('introScreen');
+const gameUI = document.getElementById('gameUI');
+const startBtn = document.getElementById('startBtn');
+const scoreValue = document.getElementById('scoreValue');
+const storyText = document.getElementById('storyText');
 
-/* --- ЭКРАН ВСТУПЛЕНИЯ --- */
-#introScreen {
-    position: absolute; inset: 0; z-index: 10;
-    background: #000;
-    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
-    transition: opacity 2s ease;
+let gameRunning = false;
+
+// Настройки
+const player = { x: 0, y: 0, radius: 15, speed: 6 };
+const camera = { x: 0, y: 0 };
+let targetX = 0, targetY = 0;
+let isMoving = false;
+let score = 0;
+let particles = [];
+let trees = [];
+let stars = [];
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Создание мира
+function initGame() {
+    score = 0; scoreValue.innerText = score;
+    player.x = 0; player.y = 0;
+    camera.x = 0; camera.y = 0;
+    targetX = 0; targetY = 0;
+    particles = [];
+    storyText.style.opacity = 0;
+
+    // Создаем 3 мертвых древа в разных концах карты
+    trees = [
+        { x: -1200, y: -800, awakened: false, pulse: 0 },
+        { x: 1500, y: -1000, awakened: false, pulse: 0 },
+        { x: 0, y: 1500, awakened: false, pulse: 0 }
+    ];
+
+    stars = [];
+    for(let i=0; i<300; i++) {
+        stars.push({
+            x: (Math.random() - 0.5) * 5000,
+            y: (Math.random() - 0.5) * 5000,
+            size: Math.random() * 2 + 0.5,
+            alpha: Math.random()
+        });
+    }
 }
 
-.intro-text {
-    font-size: 24px; font-style: italic; color: #8892b0;
-    opacity: 0; animation: fadeIn 3s forwards;
+// Старт игры
+startBtn.addEventListener('click', () => {
+    introScreen.style.opacity = 0;
+    setTimeout(() => {
+        introScreen.style.display = 'none';
+        gameUI.style.display = 'block';
+        gameRunning = true;
+        initGame();
+        requestAnimationFrame(update);
+    }, 2000); // Ждем пока экран вступления исчезнет
+});
+
+// Управление
+window.addEventListener('mousedown', (e) => {
+    if (!gameRunning) return;
+    targetX = e.clientX - canvas.width / 2 + camera.x;
+    targetY = e.clientY - canvas.height / 2 + camera.y;
+    isMoving = true;
+});
+
+function update() {
+    if (!gameRunning) return;
+
+    // Движение
+    if (isMoving) {
+        let dx = targetX - player.x;
+        let dy = targetY - player.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist > 5) {
+            player.x += (dx / dist) * player.speed;
+            player.y += (dy / dist) * player.speed;
+            if (Math.random() > 0.4) {
+                particles.push({ x: player.x, y: player.y, life: 1.0, size: Math.random() * 3 + 1 });
+            }
+        } else {
+            isMoving = false;
+        }
+    }
+
+    // Камера
+    camera.x += (player.x - camera.x) * 0.05;
+    camera.y += (player.y - camera.y) * 0.05;
+
+    // Частицы
+    particles.forEach((p, i) => {
+        p.life -= 0.015;
+        p.size *= 0.95;
+        if (p.life <= 0) particles.splice(i, 1);
+    });
+
+    // Проверка древ
+    trees.forEach(t => {
+        if (!t.awakened) {
+            let dist = Math.hypot(t.x - player.x, t.y - player.y);
+            // Если подлетели к древу
+            if (dist < 100) {
+                t.awakened = true;
+                score++;
+                scoreValue.innerText = score;
+                
+                // Показываем сюжетный текст
+                if (score === 1) storyText.innerText = "Первое Древо... Я чувствую его пульс.";
+                if (score === 2) storyText.innerText = "Жизнь возвращается в этот мир.";
+                if (score === 3) {
+                    storyText.innerText = "Ветер снова дует. Ты справился.";
+                    setTimeout(() => { alert("Конец пролога!"); }, 3000);
+                }
+                
+                storyText.style.opacity = 1;
+                setTimeout(() => { storyText.style.opacity = 0; }, 5000);
+            }
+        }
+    });
+
+    draw();
+    requestAnimationFrame(update);
 }
-.intro-text:nth-child(1) { animation-delay: 1s; }
-.intro-text:nth-child(2) { animation-delay: 4s; }
-.intro-text:nth-child(3) { animation-delay: 7s; }
-.intro-text:nth-child(4) { animation-delay: 10s; }
 
-@keyframes fadeIn { to { opacity: 1; } }
+function draw() {
+    // Мрачный фон
+    let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
+    grad.addColorStop(0, '#0a0a1a');
+    grad.addColorStop(1, '#000000');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-.btn {
-    margin-top: 40px; padding: 15px 40px;
-    background: transparent; border: 1px solid #4f8cff; color: #4f8cff;
-    font-size: 18px; letter-spacing: 2px; border-radius: 5px; cursor: pointer;
-    transition: all 0.5s; opacity: 0; animation: fadeIn 2s forwards; animation-delay: 13s;
-}
-.btn:hover { background: #4f8cff; color: #000; box-shadow: 0 0 20px #4f8cff; }
+    let cx = canvas.width / 2 - camera.x;
+    let cy = canvas.height / 2 - camera.y;
 
-/* --- ИНТЕРФЕЙС ИГРЫ --- */
-.objective {
-    position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
-    font-size: 20px; color: rgba(255, 255, 255, 0.5); z-index: 10;
-    letter-spacing: 2px; text-transform: uppercase;
-}
+    // Звезды
+    ctx.fillStyle = '#fff';
+    stars.forEach(s => {
+        let sx = cx + s.x, sy = cy + s.y;
+        if (sx > 0 && sx < canvas.width && sy > 0 && sy < canvas.height) {
+            ctx.globalAlpha = s.alpha * 0.5;
+            ctx.beginPath(); ctx.arc(sx, sy, s.size, 0, Math.PI * 2); ctx.fill();
+        }
+    });
+    ctx.globalAlpha = 1;
 
-.story-text {
-    position: absolute; bottom: 50px; width: 100%; text-align: center;
-    font-size: 28px; font-style: italic; color: #fff; z-index: 10;
-    text-shadow: 0 0 20px #4f8cff;
-    opacity: 0; transition: opacity 2s ease; pointer-events: none;
+    // Древа
+    trees.forEach(t => {
+        let tx = cx + t.x, ty = cy + t.y;
+        ctx.beginPath();
+        if (t.awakened) {
+            // Расцветшее древо (светится)
+            ctx.arc(tx, ty, 40, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(79, 140, 255, 0.6)';
+            ctx.shadowBlur = 50; ctx.shadowColor = '#4f8cff';
+        } else {
+            // Мертвое древо (темный силуэт)
+            ctx.arc(tx, ty, 30, 0, Math.PI * 2);
+            ctx.fillStyle = '#111';
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        ctx.fill(); ctx.shadowBlur = 0;
+    });
+
+    // Частицы (шлейф)
+    particles.forEach(p => {
+        let px = cx + p.x, py = cy + p.y;
+        ctx.fillStyle = `rgba(79, 140, 255, ${p.life})`;
+        ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Игрок
+    let px = cx + player.x, py = cy + player.y;
+    ctx.beginPath();
+    ctx.arc(px, py, player.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.shadowBlur = 30; ctx.shadowColor = '#fff';
+    ctx.fill(); ctx.shadowBlur = 0;
 }
