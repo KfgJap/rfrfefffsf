@@ -1,24 +1,26 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false; // Включаем пиксельный стиль!
 
-// Экраны
-const introScreen = document.getElementById('introScreen');
+const mainMenu = document.getElementById('mainMenu');
 const gameUI = document.getElementById('gameUI');
-const startBtn = document.getElementById('startBtn');
+const playBtn = document.getElementById('playBtn');
+const backBtn = document.getElementById('backBtn');
 const scoreValue = document.getElementById('scoreValue');
 const storyText = document.getElementById('storyText');
 
 let gameRunning = false;
+let worldSize = 3000; // Размер мира (квадрат)
 
-// Настройки
-const player = { x: 0, y: 0, radius: 15, speed: 6 };
+const player = { x: 0, y: 0, radius: 10, speed: 5 };
 const camera = { x: 0, y: 0 };
 let targetX = 0, targetY = 0;
 let isMoving = false;
 let score = 0;
 let particles = [];
+let seeds = [];
 let trees = [];
-let stars = [];
+let grass = []; // Для фона
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -27,46 +29,60 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// Создание мира
-function initGame() {
+function initWorld() {
     score = 0; scoreValue.innerText = score;
     player.x = 0; player.y = 0;
     camera.x = 0; camera.y = 0;
-    targetX = 0; targetY = 0;
     particles = [];
-    storyText.style.opacity = 0;
 
-    // Создаем 3 мертвых древа в разных концах карты
-    trees = [
-        { x: -1200, y: -800, awakened: false, pulse: 0 },
-        { x: 1500, y: -1000, awakened: false, pulse: 0 },
-        { x: 0, y: 1500, awakened: false, pulse: 0 }
-    ];
+    // Генерация пиксельной травы (фон)
+    grass = [];
+    for(let i=0; i<2000; i++) {
+        grass.push({
+            x: (Math.random() - 0.5) * worldSize,
+            y: (Math.random() - 0.5) * worldSize,
+            size: Math.random() * 3 + 1,
+            color: Math.random() > 0.5 ? '#1a2b1a' : '#1f331f' // Темная, мертвая трава
+        });
+    }
 
-    stars = [];
-    for(let i=0; i<300; i++) {
-        stars.push({
-            x: (Math.random() - 0.5) * 5000,
-            y: (Math.random() - 0.5) * 5000,
-            size: Math.random() * 2 + 0.5,
-            alpha: Math.random()
+    // Мертвые деревья (декорации)
+    trees = [];
+    for(let i=0; i<30; i++) {
+        trees.push({
+            x: (Math.random() - 0.5) * worldSize,
+            y: (Math.random() - 0.5) * worldSize,
+            width: Math.random() * 10 + 5,
+            height: Math.random() * 40 + 20
+        });
+    }
+
+    // Семена жизни (собираем)
+    seeds = [];
+    for(let i=0; i<5; i++) {
+        seeds.push({
+            x: (Math.random() - 0.5) * 2000,
+            y: (Math.random() - 0.5) * 2000,
+            collected: false,
+            pulse: 0
         });
     }
 }
 
-// Старт игры
-startBtn.addEventListener('click', () => {
-    introScreen.style.opacity = 0;
-    setTimeout(() => {
-        introScreen.style.display = 'none';
-        gameUI.style.display = 'block';
-        gameRunning = true;
-        initGame();
-        requestAnimationFrame(update);
-    }, 2000); // Ждем пока экран вступления исчезнет
+playBtn.addEventListener('click', () => {
+    mainMenu.style.display = 'none';
+    gameUI.style.display = 'block';
+    gameRunning = true;
+    initWorld();
+    requestAnimationFrame(update);
 });
 
-// Управление
+backBtn.addEventListener('click', () => {
+    gameRunning = false;
+    gameUI.style.display = 'none';
+    mainMenu.style.display = 'flex';
+});
+
 window.addEventListener('mousedown', (e) => {
     if (!gameRunning) return;
     targetX = e.clientX - canvas.width / 2 + camera.x;
@@ -77,7 +93,6 @@ window.addEventListener('mousedown', (e) => {
 function update() {
     if (!gameRunning) return;
 
-    // Движение
     if (isMoving) {
         let dx = targetX - player.x;
         let dy = targetY - player.y;
@@ -85,45 +100,38 @@ function update() {
         if (dist > 5) {
             player.x += (dx / dist) * player.speed;
             player.y += (dy / dist) * player.speed;
-            if (Math.random() > 0.4) {
-                particles.push({ x: player.x, y: player.y, life: 1.0, size: Math.random() * 3 + 1 });
+            
+            // Частицы (пиксельный шлейф)
+            if (Math.random() > 0.5) {
+                particles.push({ x: player.x, y: player.y, life: 1.0 });
             }
         } else {
             isMoving = false;
         }
     }
 
-    // Камера
-    camera.x += (player.x - camera.x) * 0.05;
-    camera.y += (player.y - camera.y) * 0.05;
+    camera.x += (player.x - camera.x) * 0.08;
+    camera.y += (player.y - camera.y) * 0.08;
 
-    // Частицы
     particles.forEach((p, i) => {
-        p.life -= 0.015;
-        p.size *= 0.95;
+        p.life -= 0.05;
         if (p.life <= 0) particles.splice(i, 1);
     });
 
-    // Проверка древ
-    trees.forEach(t => {
-        if (!t.awakened) {
-            let dist = Math.hypot(t.x - player.x, t.y - player.y);
-            // Если подлетели к древу
-            if (dist < 100) {
-                t.awakened = true;
+    seeds.forEach(s => {
+        if (!s.collected) {
+            s.pulse += 0.1;
+            let dist = Math.hypot(s.x - player.x, s.y - player.y);
+            if (dist < player.radius + 15) {
+                s.collected = true;
                 score++;
                 scoreValue.innerText = score;
                 
-                // Показываем сюжетный текст
-                if (score === 1) storyText.innerText = "Первое Древо... Я чувствую его пульс.";
-                if (score === 2) storyText.innerText = "Жизнь возвращается в этот мир.";
-                if (score === 3) {
-                    storyText.innerText = "Ветер снова дует. Ты справился.";
-                    setTimeout(() => { alert("Конец пролога!"); }, 3000);
+                if (score === 1) showStory("Семя Жизни найдено...");
+                if (score === 5) {
+                    showStory("Мир начинает просыпаться...");
+                    setTimeout(() => alert("Уровень пройден!"), 2000);
                 }
-                
-                storyText.style.opacity = 1;
-                setTimeout(() => { storyText.style.opacity = 0; }, 5000);
             }
         }
     });
@@ -132,60 +140,54 @@ function update() {
     requestAnimationFrame(update);
 }
 
+function showStory(text) {
+    storyText.innerText = text;
+    storyText.style.opacity = 1;
+    setTimeout(() => { storyText.style.opacity = 0; }, 3000);
+}
+
 function draw() {
-    // Мрачный фон
-    let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
-    grad.addColorStop(0, '#0a0a1a');
-    grad.addColorStop(1, '#000000');
-    ctx.fillStyle = grad;
+    // Темный фон (земля)
+    ctx.fillStyle = '#080b08';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     let cx = canvas.width / 2 - camera.x;
     let cy = canvas.height / 2 - camera.y;
 
-    // Звезды
-    ctx.fillStyle = '#fff';
-    stars.forEach(s => {
-        let sx = cx + s.x, sy = cy + s.y;
-        if (sx > 0 && sx < canvas.width && sy > 0 && sy < canvas.height) {
-            ctx.globalAlpha = s.alpha * 0.5;
-            ctx.beginPath(); ctx.arc(sx, sy, s.size, 0, Math.PI * 2); ctx.fill();
-        }
+    // Рисуем траву (пиксели)
+    grass.forEach(g => {
+        ctx.fillStyle = g.color;
+        ctx.fillRect(cx + g.x, cy + g.y, g.size, g.size);
     });
-    ctx.globalAlpha = 1;
 
-    // Древа
+    // Рисуем мертвые деревья
     trees.forEach(t => {
-        let tx = cx + t.x, ty = cy + t.y;
-        ctx.beginPath();
-        if (t.awakened) {
-            // Расцветшее древо (светится)
-            ctx.arc(tx, ty, 40, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(79, 140, 255, 0.6)';
-            ctx.shadowBlur = 50; ctx.shadowColor = '#4f8cff';
-        } else {
-            // Мертвое древо (темный силуэт)
-            ctx.arc(tx, ty, 30, 0, Math.PI * 2);
-            ctx.fillStyle = '#111';
-            ctx.strokeStyle = '#222';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+        ctx.fillStyle = '#111';
+        ctx.fillRect(cx + t.x, cy + t.y, t.width, -t.height);
+    });
+
+    // Рисуем Семена (светящиеся пиксели)
+    seeds.forEach(s => {
+        if (!s.collected) {
+            let sx = cx + s.x, sy = cy + s.y;
+            let size = 6 + Math.sin(s.pulse) * 2;
+            ctx.fillStyle = '#4f8cff';
+            ctx.shadowBlur = 15; ctx.shadowColor = '#4f8cff';
+            ctx.fillRect(sx - size/2, sy - size/2, size, size);
+            ctx.shadowBlur = 0;
         }
-        ctx.fill(); ctx.shadowBlur = 0;
     });
 
-    // Частицы (шлейф)
+    // Шлейф
     particles.forEach(p => {
-        let px = cx + p.x, py = cy + p.y;
-        ctx.fillStyle = `rgba(79, 140, 255, ${p.life})`;
-        ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(168, 178, 209, ${p.life})`;
+        ctx.fillRect(cx + p.x, cy + p.y, 3, 3);
     });
 
-    // Игрок
+    // Игрок (Пиксельный Дух)
     let px = cx + player.x, py = cy + player.y;
-    ctx.beginPath();
-    ctx.arc(px, py, player.radius, 0, Math.PI * 2);
     ctx.fillStyle = '#fff';
-    ctx.shadowBlur = 30; ctx.shadowColor = '#fff';
-    ctx.fill(); ctx.shadowBlur = 0;
+    ctx.shadowBlur = 20; ctx.shadowColor = '#fff';
+    ctx.fillRect(px - 8, py - 8, 16, 16); // Квадрат вместо круга
+    ctx.shadowBlur = 0;
 }
