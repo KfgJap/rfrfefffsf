@@ -1,193 +1,46 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = false; // Включаем пиксельный стиль!
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Georgia', serif; }
+body { background-color: #000; overflow: hidden; color: #fff; cursor: crosshair; }
 
-const mainMenu = document.getElementById('mainMenu');
-const gameUI = document.getElementById('gameUI');
-const playBtn = document.getElementById('playBtn');
-const backBtn = document.getElementById('backBtn');
-const scoreValue = document.getElementById('scoreValue');
-const storyText = document.getElementById('storyText');
+canvas { display: block; width: 100vw; height: 100vh; }
 
-let gameRunning = false;
-let worldSize = 3000; // Размер мира (квадрат)
-
-const player = { x: 0, y: 0, radius: 10, speed: 5 };
-const camera = { x: 0, y: 0 };
-let targetX = 0, targetY = 0;
-let isMoving = false;
-let score = 0;
-let particles = [];
-let seeds = [];
-let trees = [];
-let grass = []; // Для фона
-
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+/* МЕНЮ */
+#mainMenu {
+    position: absolute; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    background: radial-gradient(circle, #0a1128 0%, #000 100%);
 }
-window.addEventListener('resize', resize);
-resize();
+.title { font-size: 50px; text-align: center; line-height: 1.2; color: #e2e8f0; text-shadow: 0 0 30px #4f8cff; margin-bottom: 30px; letter-spacing: 5px; }
 
-function initWorld() {
-    score = 0; scoreValue.innerText = score;
-    player.x = 0; player.y = 0;
-    camera.x = 0; camera.y = 0;
-    particles = [];
-
-    // Генерация пиксельной травы (фон)
-    grass = [];
-    for(let i=0; i<2000; i++) {
-        grass.push({
-            x: (Math.random() - 0.5) * worldSize,
-            y: (Math.random() - 0.5) * worldSize,
-            size: Math.random() * 3 + 1,
-            color: Math.random() > 0.5 ? '#1a2b1a' : '#1f331f' // Темная, мертвая трава
-        });
-    }
-
-    // Мертвые деревья (декорации)
-    trees = [];
-    for(let i=0; i<30; i++) {
-        trees.push({
-            x: (Math.random() - 0.5) * worldSize,
-            y: (Math.random() - 0.5) * worldSize,
-            width: Math.random() * 10 + 5,
-            height: Math.random() * 40 + 20
-        });
-    }
-
-    // Семена жизни (собираем)
-    seeds = [];
-    for(let i=0; i<5; i++) {
-        seeds.push({
-            x: (Math.random() - 0.5) * 2000,
-            y: (Math.random() - 0.5) * 2000,
-            collected: false,
-            pulse: 0
-        });
-    }
+.missions-list {
+    display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px;
+    background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
 }
+.mission-item { font-size: 18px; color: #8892b0; display: flex; align-items: center; gap: 10px; }
+.mission-item.completed { color: #4f8cff; text-decoration: line-through; }
+.status { font-size: 24px; font-family: monospace; }
 
-playBtn.addEventListener('click', () => {
-    mainMenu.style.display = 'none';
-    gameUI.style.display = 'block';
-    gameRunning = true;
-    initWorld();
-    requestAnimationFrame(update);
-});
-
-backBtn.addEventListener('click', () => {
-    gameRunning = false;
-    gameUI.style.display = 'none';
-    mainMenu.style.display = 'flex';
-});
-
-window.addEventListener('mousedown', (e) => {
-    if (!gameRunning) return;
-    targetX = e.clientX - canvas.width / 2 + camera.x;
-    targetY = e.clientY - canvas.height / 2 + camera.y;
-    isMoving = true;
-});
-
-function update() {
-    if (!gameRunning) return;
-
-    if (isMoving) {
-        let dx = targetX - player.x;
-        let dy = targetY - player.y;
-        let dist = Math.hypot(dx, dy);
-        if (dist > 5) {
-            player.x += (dx / dist) * player.speed;
-            player.y += (dy / dist) * player.speed;
-            
-            // Частицы (пиксельный шлейф)
-            if (Math.random() > 0.5) {
-                particles.push({ x: player.x, y: player.y, life: 1.0 });
-            }
-        } else {
-            isMoving = false;
-        }
-    }
-
-    camera.x += (player.x - camera.x) * 0.08;
-    camera.y += (player.y - camera.y) * 0.08;
-
-    particles.forEach((p, i) => {
-        p.life -= 0.05;
-        if (p.life <= 0) particles.splice(i, 1);
-    });
-
-    seeds.forEach(s => {
-        if (!s.collected) {
-            s.pulse += 0.1;
-            let dist = Math.hypot(s.x - player.x, s.y - player.y);
-            if (dist < player.radius + 15) {
-                s.collected = true;
-                score++;
-                scoreValue.innerText = score;
-                
-                if (score === 1) showStory("Семя Жизни найдено...");
-                if (score === 5) {
-                    showStory("Мир начинает просыпаться...");
-                    setTimeout(() => alert("Уровень пройден!"), 2000);
-                }
-            }
-        }
-    });
-
-    draw();
-    requestAnimationFrame(update);
+.btn {
+    font-size: 18px; padding: 15px 50px; background: transparent; border: 1px solid #4f8cff; color: #4f8cff;
+    cursor: pointer; transition: all 0.4s ease; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px;
 }
+.btn:hover { background: #4f8cff; color: #000; box-shadow: 0 0 30px #4f8cff; }
+.btn.small { position: absolute; top: 20px; right: 20px; padding: 10px 20px; font-size: 12px; margin: 0; }
+.btn.reset { font-size: 12px; padding: 10px 20px; border-color: #a855f7; color: #a855f7; margin-top: 10px; }
+.btn.reset:hover { background: #a855f7; color: #fff; box-shadow: 0 0 20px #a855f7; }
 
-function showStory(text) {
-    storyText.innerText = text;
-    storyText.style.opacity = 1;
-    setTimeout(() => { storyText.style.opacity = 0; }, 3000);
+/* ИГРА */
+.hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+.objective { position: absolute; top: 30px; left: 30px; font-size: 22px; font-style: italic; color: #e2e8f0; text-shadow: 0 0 10px #4f8cff; }
+
+/* ЭКРАН ПОБЕДЫ */
+#victoryScreen {
+    position: absolute; inset: 0; z-index: 50;
+    background: rgba(0, 0, 0, 0.8);
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    backdrop-filter: blur(5px); text-align: center;
 }
+#victoryScreen.active { display: flex; animation: fadeIn 2s forwards; }
+#victoryScreen h2 { font-size: 60px; color: #4f8cff; text-shadow: 0 0 40px #4f8cff; margin-bottom: 10px; }
+#victoryScreen p { font-size: 24px; color: #fff; margin-bottom: 40px; }
 
-function draw() {
-    // Темный фон (земля)
-    ctx.fillStyle = '#080b08';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    let cx = canvas.width / 2 - camera.x;
-    let cy = canvas.height / 2 - camera.y;
-
-    // Рисуем траву (пиксели)
-    grass.forEach(g => {
-        ctx.fillStyle = g.color;
-        ctx.fillRect(cx + g.x, cy + g.y, g.size, g.size);
-    });
-
-    // Рисуем мертвые деревья
-    trees.forEach(t => {
-        ctx.fillStyle = '#111';
-        ctx.fillRect(cx + t.x, cy + t.y, t.width, -t.height);
-    });
-
-    // Рисуем Семена (светящиеся пиксели)
-    seeds.forEach(s => {
-        if (!s.collected) {
-            let sx = cx + s.x, sy = cy + s.y;
-            let size = 6 + Math.sin(s.pulse) * 2;
-            ctx.fillStyle = '#4f8cff';
-            ctx.shadowBlur = 15; ctx.shadowColor = '#4f8cff';
-            ctx.fillRect(sx - size/2, sy - size/2, size, size);
-            ctx.shadowBlur = 0;
-        }
-    });
-
-    // Шлейф
-    particles.forEach(p => {
-        ctx.fillStyle = `rgba(168, 178, 209, ${p.life})`;
-        ctx.fillRect(cx + p.x, cy + p.y, 3, 3);
-    });
-
-    // Игрок (Пиксельный Дух)
-    let px = cx + player.x, py = cy + player.y;
-    ctx.fillStyle = '#fff';
-    ctx.shadowBlur = 20; ctx.shadowColor = '#fff';
-    ctx.fillRect(px - 8, py - 8, 16, 16); // Квадрат вместо круга
-    ctx.shadowBlur = 0;
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
