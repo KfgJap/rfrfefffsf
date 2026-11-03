@@ -1,181 +1,45 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Georgia', serif; }
+body { background-color: #000; overflow: hidden; color: white; cursor: crosshair; }
 
-// Элементы интерфейса
-const mainMenu = document.getElementById('mainMenu');
-const gameUI = document.getElementById('gameUI');
-const playBtn = document.getElementById('playBtn');
-const menuBtn = document.getElementById('menuBtn');
-const scoreValue = document.getElementById('scoreValue');
+canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-let gameRunning = false;
-
-// Переменные игры
-const player = { x: 0, y: 0, radius: 15, speed: 8 };
-const camera = { x: 0, y: 0 };
-let targetX = 0, targetY = 0;
-let isMoving = false;
-let score = 0;
-let particles = [];
-let echoes = [];
-let stars = [];
-
-// Инициализация холста
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-// Генерация мира
-function initGame() {
-    score = 0;
-    scoreValue.innerText = score;
-    player.x = 0; player.y = 0;
-    camera.x = 0; camera.y = 0;
-    targetX = 0; targetY = 0;
-    isMoving = false;
-    particles = [];
-
-    echoes = [];
-    for (let i = 0; i < 10; i++) {
-        echoes.push({
-            x: (Math.random() - 0.5) * 1500,
-            y: (Math.random() - 0.5) * 1500,
-            collected: false,
-            pulse: Math.random() * Math.PI * 2
-        });
-    }
-
-    stars = [];
-    for(let i=0; i<200; i++) {
-        stars.push({
-            x: (Math.random() - 0.5) * 3000,
-            y: (Math.random() - 0.5) * 3000,
-            size: Math.random() * 2 + 0.5,
-            alpha: Math.random()
-        });
-    }
+/* --- ЭКРАН ВСТУПЛЕНИЯ --- */
+#introScreen {
+    position: absolute; inset: 0; z-index: 10;
+    background: #000;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+    transition: opacity 2s ease;
 }
 
-// Кнопки меню
-playBtn.addEventListener('click', () => {
-    mainMenu.style.display = 'none';
-    gameUI.style.display = 'block';
-    gameRunning = true;
-    initGame();
-    requestAnimationFrame(update);
-});
+.intro-text {
+    font-size: 24px; font-style: italic; color: #8892b0;
+    opacity: 0; animation: fadeIn 3s forwards;
+}
+.intro-text:nth-child(1) { animation-delay: 1s; }
+.intro-text:nth-child(2) { animation-delay: 4s; }
+.intro-text:nth-child(3) { animation-delay: 7s; }
+.intro-text:nth-child(4) { animation-delay: 10s; }
 
-menuBtn.addEventListener('click', () => {
-    gameRunning = false;
-    gameUI.style.display = 'none';
-    mainMenu.style.display = 'flex';
-});
+@keyframes fadeIn { to { opacity: 1; } }
 
-// Управление кликом
-window.addEventListener('mousedown', (e) => {
-    if (!gameRunning) return;
-    targetX = e.clientX - canvas.width / 2 + camera.x;
-    targetY = e.clientY - canvas.height / 2 + camera.y;
-    isMoving = true;
-});
+.btn {
+    margin-top: 40px; padding: 15px 40px;
+    background: transparent; border: 1px solid #4f8cff; color: #4f8cff;
+    font-size: 18px; letter-spacing: 2px; border-radius: 5px; cursor: pointer;
+    transition: all 0.5s; opacity: 0; animation: fadeIn 2s forwards; animation-delay: 13s;
+}
+.btn:hover { background: #4f8cff; color: #000; box-shadow: 0 0 20px #4f8cff; }
 
-function update() {
-    if (!gameRunning) return;
-
-    if (isMoving) {
-        let dx = targetX - player.x;
-        let dy = targetY - player.y;
-        let dist = Math.hypot(dx, dy);
-
-        if (dist > 5) {
-            player.x += (dx / dist) * player.speed;
-            player.y += (dy / dist) * player.speed;
-            
-            if (Math.random() > 0.3) {
-                particles.push({ x: player.x, y: player.y, life: 1.0, size: Math.random() * 4 + 1 });
-            }
-        } else {
-            isMoving = false;
-        }
-    }
-
-    camera.x += (player.x - camera.x) * 0.05;
-    camera.y += (player.y - camera.y) * 0.05;
-
-    particles.forEach((p, i) => {
-        p.life -= 0.02;
-        p.size *= 0.95;
-        if (p.life <= 0) particles.splice(i, 1);
-    });
-
-    echoes.forEach(e => {
-        if (!e.collected) {
-            e.pulse += 0.05;
-            let dist = Math.hypot(e.x - player.x, e.y - player.y);
-            if (dist < player.radius + 20) {
-                e.collected = true;
-                score++;
-                scoreValue.innerText = score;
-            }
-        }
-    });
-
-    draw();
-    requestAnimationFrame(update);
+/* --- ИНТЕРФЕЙС ИГРЫ --- */
+.objective {
+    position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+    font-size: 20px; color: rgba(255, 255, 255, 0.5); z-index: 10;
+    letter-spacing: 2px; text-transform: uppercase;
 }
 
-function draw() {
-    let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
-    grad.addColorStop(0, '#0a1128');
-    grad.addColorStop(1, '#02040a');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    let cx = canvas.width / 2 - camera.x;
-    let cy = canvas.height / 2 - camera.y;
-
-    ctx.fillStyle = '#fff';
-    stars.forEach(s => {
-        let sx = cx + s.x, sy = cy + s.y;
-        if (sx > 0 && sx < canvas.width && sy > 0 && sy < canvas.height) {
-            ctx.globalAlpha = s.alpha;
-            ctx.beginPath(); ctx.arc(sx, sy, s.size, 0, Math.PI * 2); ctx.fill();
-        }
-    });
-    ctx.globalAlpha = 1;
-
-    echoes.forEach(e => {
-        if (!e.collected) {
-            let ex = cx + e.x, ey = cy + e.y;
-            let scale = 1 + Math.sin(e.pulse) * 0.2;
-            ctx.beginPath();
-            ctx.arc(ex, ey, 10 * scale, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(79, 140, 255, 0.8)';
-            ctx.shadowBlur = 20; ctx.shadowColor = '#4f8cff';
-            ctx.fill(); ctx.shadowBlur = 0;
-        }
-    });
-
-    particles.forEach(p => {
-        let px = cx + p.x, py = cy + p.y;
-        ctx.fillStyle = `rgba(79, 140, 255, ${p.life})`;
-        ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
-    });
-
-    let px = cx + player.x, py = cy + player.y;
-    ctx.beginPath();
-    ctx.arc(px, py, player.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.shadowBlur = 30; ctx.shadowColor = '#4f8cff';
-    ctx.fill(); ctx.shadowBlur = 0;
-
-    if (isMoving) {
-        let tx = canvas.width / 2 + (targetX - camera.x);
-        let ty = canvas.height / 2 + (targetY - camera.y);
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.beginPath(); ctx.arc(tx, ty, 8, 0, Math.PI * 2); ctx.stroke();
-    }
+.story-text {
+    position: absolute; bottom: 50px; width: 100%; text-align: center;
+    font-size: 28px; font-style: italic; color: #fff; z-index: 10;
+    text-shadow: 0 0 20px #4f8cff;
+    opacity: 0; transition: opacity 2s ease; pointer-events: none;
 }
