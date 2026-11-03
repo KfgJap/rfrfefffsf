@@ -1,46 +1,290 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Georgia', serif; }
-body { background-color: #000; overflow: hidden; color: #fff; cursor: crosshair; }
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-canvas { display: block; width: 100vw; height: 100vh; }
+const mainMenu = document.getElementById('mainMenu');
+const gameUI = document.getElementById('gameUI');
+const playBtn = document.getElementById('playBtn');
+const backBtn = document.getElementById('backBtn');
+const missionText = document.getElementById('missionText');
+const victoryScreen = document.getElementById('victoryScreen');
+const victoryBackBtn = document.getElementById('victoryBackBtn');
+const resetBtn = document.getElementById('resetBtn');
 
-/* МЕНЮ */
-#mainMenu {
-    position: absolute; inset: 0; z-index: 100;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    background: radial-gradient(circle, #0a1128 0%, #000 100%);
+// Звуки (Web Audio API)
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+function playSound(freq, type, duration) {
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
 }
-.title { font-size: 50px; text-align: center; line-height: 1.2; color: #e2e8f0; text-shadow: 0 0 30px #4f8cff; margin-bottom: 30px; letter-spacing: 5px; }
 
-.missions-list {
-    display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px;
-    background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+let gameRunning = false;
+let mission = 1;
+let worldRevived = false;
+
+const player = { x: 0, y: 0, radius: 15, speed: 6 };
+const camera = { x: 0, y: 0 };
+let targetX = 0, targetY = 0;
+let isMoving = false;
+let particles = [];
+let lights = [];
+let sanctuary = { x: 1000, y: -500 };
+let natureParticles = []; // Для финала
+
+// Прогресс
+let progress = JSON.parse(localStorage.getItem('windGameProgress')) || { m1: false, m2: false };
+
+function updateMenuUI() {
+    const s1 = document.getElementById('status1');
+    const s2 = document.getElementById('status2');
+    const i1 = document.getElementById('mission1-item');
+    const i2 = document.getElementById('mission2-item');
+
+    if (progress.m1) { s1.innerText = '✔'; i1.classList.add('completed'); }
+    if (progress.m2) { s2.innerText = '✔'; i2.classList.add('completed'); }
 }
-.mission-item { font-size: 18px; color: #8892b0; display: flex; align-items: center; gap: 10px; }
-.mission-item.completed { color: #4f8cff; text-decoration: line-through; }
-.status { font-size: 24px; font-family: monospace; }
 
-.btn {
-    font-size: 18px; padding: 15px 50px; background: transparent; border: 1px solid #4f8cff; color: #4f8cff;
-    cursor: pointer; transition: all 0.4s ease; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px;
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 }
-.btn:hover { background: #4f8cff; color: #000; box-shadow: 0 0 30px #4f8cff; }
-.btn.small { position: absolute; top: 20px; right: 20px; padding: 10px 20px; font-size: 12px; margin: 0; }
-.btn.reset { font-size: 12px; padding: 10px 20px; border-color: #a855f7; color: #a855f7; margin-top: 10px; }
-.btn.reset:hover { background: #a855f7; color: #fff; box-shadow: 0 0 20px #a855f7; }
+window.addEventListener('resize', resize);
+resize();
+updateMenuUI();
 
-/* ИГРА */
-.hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
-.objective { position: absolute; top: 30px; left: 30px; font-size: 22px; font-style: italic; color: #e2e8f0; text-shadow: 0 0 10px #4f8cff; }
-
-/* ЭКРАН ПОБЕДЫ */
-#victoryScreen {
-    position: absolute; inset: 0; z-index: 50;
-    background: rgba(0, 0, 0, 0.8);
-    display: none; flex-direction: column; justify-content: center; align-items: center;
-    backdrop-filter: blur(5px); text-align: center;
+function initGame() {
+    player.x = 0; player.y = 0;
+    camera.x = 0; camera.y = 0;
+    particles = [];
+    natureParticles = [];
+    victoryScreen.classList.remove('active');
+    worldRevived = false;
+    
+    // Определяем, с какой миссии начать
+    if (!progress.m1) {
+        mission = 1;
+        missionText.innerText = "Найди Святилище...";
+    } else if (!progress.m2) {
+        mission = 2;
+        missionText.innerText = "Собери Огоньки (0/5)";
+        spawnLights();
+    } else {
+        mission = 3;
+        missionText.innerText = "Все миссии пройдены!";
+        worldRevived = true;
+    }
 }
-#victoryScreen.active { display: flex; animation: fadeIn 2s forwards; }
-#victoryScreen h2 { font-size: 60px; color: #4f8cff; text-shadow: 0 0 40px #4f8cff; margin-bottom: 10px; }
-#victoryScreen p { font-size: 24px; color: #fff; margin-bottom: 40px; }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+function spawnLights() {
+    lights = [];
+    for(let i=0; i<5; i++) {
+        lights.push({
+            x: (Math.random() - 0.5) * 2000,
+            y: (Math.random() - 0.5) * 2000,
+            collected: false,
+            pulse: Math.random() * Math.PI * 2
+        });
+    }
+}
+
+playBtn.addEventListener('click', () => {
+    mainMenu.style.display = 'none';
+    gameUI.style.display = 'block';
+    gameRunning = true;
+    initGame();
+    requestAnimationFrame(update);
+});
+
+backBtn.addEventListener('click', () => {
+    gameRunning = false;
+    gameUI.style.display = 'none';
+    mainMenu.style.display = 'flex';
+});
+
+victoryBackBtn.addEventListener('click', () => {
+    gameRunning = false;
+    gameUI.style.display = 'none';
+    mainMenu.style.display = 'flex';
+    updateMenuUI();
+});
+
+resetBtn.addEventListener('click', () => {
+    progress = { m1: false, m2: false };
+    localStorage.setItem('windGameProgress', JSON.stringify(progress));
+    location.reload();
+});
+
+window.addEventListener('mousedown', (e) => {
+    if (!gameRunning || worldRevived) return;
+    targetX = e.clientX - canvas.width / 2 + camera.x;
+    targetY = e.clientY - canvas.height / 2 + camera.y;
+    isMoving = true;
+});
+
+function update() {
+    if (!gameRunning) return;
+
+    if (isMoving) {
+        let dx = targetX - player.x;
+        let dy = targetY - player.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist > 5) {
+            player.x += (dx / dist) * player.speed;
+            player.y += (dy / dist) * player.speed;
+            if (Math.random() > 0.4) particles.push({ x: player.x, y: player.y + 10, life: 1.0, size: Math.random() * 5 + 2 });
+        } else {
+            isMoving = false;
+        }
+    }
+
+    camera.x += (player.x - camera.x) * 0.05;
+    camera.y += (player.y - camera.y) * 0.05;
+
+    particles.forEach((p, i) => { p.life -= 0.02; p.size *= 0.98; if (p.life <= 0) particles.splice(i, 1); });
+
+    if (mission === 1) {
+        let distToSanctuary = Math.hypot(sanctuary.x - player.x, sanctuary.y - player.y);
+        if (distToSanctuary < 100) {
+            playSound(600, 'sine', 1); // Звук завершения
+            progress.m1 = true;
+            localStorage.setItem('windGameProgress', JSON.stringify(progress));
+            
+            mission = 2;
+            missionText.innerText = "Собери Огоньки (0/5)";
+            spawnLights();
+        }
+    } else if (mission === 2) {
+        let collectedCount = 0;
+        lights.forEach(l => {
+            if (!l.collected) {
+                l.pulse += 0.05;
+                let dist = Math.hypot(l.x - player.x, l.y - player.y);
+                if (dist < player.radius + 30) {
+                    l.collected = true;
+                    playSound(800, 'triangle', 0.3); // Звук сбора
+                }
+            }
+            if (l.collected) collectedCount++;
+        });
+        missionText.innerText = `Собери Огоньки (${collectedCount}/5)`;
+        
+        if (collectedCount === 5) {
+            playSound(400, 'sine', 2); // Звук победы
+            progress.m2 = true;
+            localStorage.setItem('windGameProgress', JSON.stringify(progress));
+            
+            mission = 3;
+            worldRevived = true;
+            missionText.innerText = "Мир возрожден!";
+            
+            // Показываем экран победы с задержкой
+            setTimeout(() => victoryScreen.classList.add('active'), 2000);
+            
+            // Спавним частицы природы (листья)
+            for(let i=0; i<100; i++) {
+                natureParticles.push({
+                    x: (Math.random() - 0.5) * canvas.width,
+                    y: (Math.random() - 0.5) * canvas.height,
+                    speed: Math.random() * 2 + 1,
+                    size: Math.random() * 6 + 3,
+                    color: Math.random() > 0.5 ? '#4f8cff' : '#a855f7'
+                });
+            }
+        }
+    }
+
+    if (worldRevived) {
+        // Анимация летящих листьев при победе
+        natureParticles.forEach(p => {
+            p.y += p.speed;
+            p.x += Math.sin(p.y * 0.01) * 2;
+            if (p.y > canvas.height) p.y = -10;
+        });
+    }
+
+    draw();
+    requestAnimationFrame(update);
+}
+
+function draw() {
+    // Фон (меняется при победе)
+    let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    if (worldRevived) {
+        grad.addColorStop(0, '#0a1128');
+        grad.addColorStop(1, '#1a2b4a'); // Светлее
+    } else {
+        grad.addColorStop(0, '#0a1128');
+        grad.addColorStop(1, '#02040a');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    let cx = canvas.width / 2 - camera.x;
+    let cy = canvas.height / 2 - camera.y;
+
+    // Параллакс-фон
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+    for(let i=0; i<10; i++) {
+        ctx.beginPath(); ctx.arc(cx - camera.x * 0.5 + i * 300, cy - camera.y * 0.5 + 200, 200, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Если мир возрожден - рисуем летящие листья
+    if (worldRevived) {
+        natureParticles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+    }
+
+    // Святилище (1 миссия)
+    if (mission === 1) {
+        let sx = cx + sanctuary.x, sy = cy + sanctuary.y;
+        ctx.fillStyle = 'rgba(79, 140, 255, 0.2)'; ctx.beginPath(); ctx.arc(sx, sy, 80, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#4f8cff'; ctx.shadowBlur = 40; ctx.shadowColor = '#4f8cff';
+        ctx.beginPath(); ctx.arc(sx, sy, 15, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    }
+
+    // Огоньки (2 миссия)
+    if (mission === 2) {
+        lights.forEach(l => {
+            if (!l.collected) {
+                let lx = cx + l.x, ly = cy + l.y;
+                let size = 8 + Math.sin(l.pulse) * 3;
+                ctx.fillStyle = '#a855f7'; ctx.shadowBlur = 25; ctx.shadowColor = '#a855f7';
+                ctx.beginPath(); ctx.arc(lx, ly, size, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+            }
+        });
+    }
+
+    // Шлейф
+    particles.forEach(p => {
+        let px = cx + p.x, py = cy + p.y;
+        ctx.fillStyle = `rgba(79, 140, 255, ${p.life * 0.5})`;
+        ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Игрок (Призрак)
+    let px = cx + player.x, py = cy + player.y;
+    ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 30; ctx.shadowColor = '#4f8cff';
+    ctx.beginPath();
+    ctx.arc(px, py - 5, 12, Math.PI, 0); 
+    ctx.lineTo(px + 12, py + 15); ctx.lineTo(px + 6, py + 10);
+    ctx.lineTo(px, py + 15); ctx.lineTo(px - 6, py + 10);
+    ctx.lineTo(px - 12, py + 15); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Глаза
+    ctx.fillStyle = '#0a1128';
+    ctx.beginPath(); ctx.arc(px - 4, py - 5, 2, 0, Math.PI * 2); ctx.arc(px + 4, py - 5, 2, 0, Math.PI * 2); ctx.fill();
+}
