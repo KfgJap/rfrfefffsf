@@ -1,14 +1,104 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Whisper of the Wind</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <!-- ГЛАВНОЕ МЕНЮ -->
-    <div id="mainMenu">
-        <h1 class="game-title">WHISPER<br>OF THE WIND</h1>
-        <div class="menu-buttons">
-            <button id="playBtn" class="btn primary">ИГРАТЬ</button>
-            <button id="skinsBtn" class="btn
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #02040a;
+    overflow: hidden;
+    cursor: default;
+    color: white;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* --- ГЛАВНОЕ МЕНЮ --- */
+#mainMenu {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    background: radial-gradient(circle at center, #0a1128 0%, #02040a 100%);
+}
+
+.game-title {
+    font-size: 60px;
+    font-weight: 900;
+    text-align: center;
+    line-height: 1.1;
+    letter-spacing: 5px;
+    margin-bottom: 50px;
+    color: #fff;
+    text-shadow: 0 0 20px #4f8cff, 0 0 50px #4f8cff;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 300px;
+}
+
+.btn {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    background: rgba(79, 140, 255, 0.2);
+    border-color: #4f8cff;
+    box-shadow: 0 0 20px rgba(79, 140, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.btn.primary {
+    background: #4f8cff;
+    color: #000;
+    border: none;
+}
+
+.btn.primary:hover {
+    box-shadow: 0 0 30px #4f8cff;
+    background: #fff;
+}
+
+.btn.small {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* --- ИГРОВОЙ ИНТЕРФЕЙС --- */
+.score {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 0 0 10px #4f8cff;
+    z-index: 10;
+}
